@@ -3,6 +3,8 @@ import datetime
 #   Takes a txt WhatsApp converastion and displays relevant data
 
 #   Message class
+
+
 class Message:
     #   08/03/2019, 17:19 - Fco: Hi
     line = ""
@@ -24,6 +26,8 @@ class Message:
             # find second occurrence of ':'
 
 #   Reads from file 'filepath'
+
+
 def readFromFile(filepath):
     with open(filepath, encoding="utf8") as fp:
         line = fp.readline()
@@ -34,16 +38,32 @@ def readFromFile(filepath):
                 msgList.append(msg)
             line = fp.readline()
 
-            
+class Author:
+    name = ""
+    nMsgs = 0
+    nFiles = 0
+    
+def createAuthors():
+    for msg in msgList:
+        ok = False
+        for au in authorList:
+            if au.name == msg.author:
+                ok = True
+        if not ok:
+            a = Author()
+            a.name = msg.author
+            authorList.append(a)
+
+def assignMsgs():
+    # read msg list and add msgs to the Author.nMsg
+
 filepath = "WaPy/conver1.txt"
 msgList = []
 authorList = []
+msgPerAuthor = {}
 
 #   read the file line by line, create the messages and store them in msgList
 readFromFile(filepath)
 
-#   get a list of the authors in the conversation
-for msg in msgList:
-    if msg.author not in authorList:
-        authorList.append(msg.author)
-
+#   create list of authors
+createAuthors()
