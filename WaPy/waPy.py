@@ -1,44 +1,39 @@
 import datetime
-# waPy.py
-# Takes a txt WhatsApp converastion and displays relevant data
-
+#   waPy.py
+#   Takes a txt WhatsApp converastion and displays relevant data
 
 class Message:
-    # 08/03/2019, 17:19 - Fco: Hi
+    #   08/03/2019, 17:19 - Fco: Hi
     line = ""
-    timeStamp = None
+    time = datetime
     author = ""
     content = ""
 
     def processMessage(self, input):
-        self.line = input
-        day = input[0:2]
-        month = input[3:5]
-        year = input[6:10]
-        hour = input[12:14]
-        minute = input[15:17]
-
-        # timeStamp = 
-
-        print("--")
-        print("Day '%s'" %(day))
-        print("Month: '%s'" %(month))
-        print("Year: '%s'" %(year))
-        print("Hour: '%s'" %(hour))
-        print("Minute: '%s'" %(minute))
-
+        #   first check if the line is a message
+        if input != '\n' and len(input) > 0 and (input[2] == '/' and input[5] == '/'):
+            self.line = input.rstrip()
+            day = int(line[0:2])
+            month = int(line[3:5])
+            year = int(line[6:10])
+            hour = int(line[12:14])
+            minute = int(line[15:17])
+            self.time = datetime.datetime(year, month, day, hour, minute)
+            self.author = line[20:].split(':')[0]
+            # find second occurrence of ':'
+            
 
 msgList = []
-count = 0
+authorList = []
 
+
+#   read the file line by line, create the messages and store them in msgList
 filepath = "WaPy/conver1.txt"
 with open(filepath, encoding="utf8") as fp:
     line = fp.readline()
     while line:
         msg = Message()
         msg.processMessage(line)
-        msgList.append(msg)
-
-
+        if(msg.line != ''):
+            msgList.append(msg)
         line = fp.readline()
-        count += 1
