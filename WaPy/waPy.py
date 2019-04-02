@@ -89,16 +89,16 @@ def msgPerHour(user, msg, avg):
     if msg is True:
         for msg in user.msgs:
             hours[msg.time.hour] += 1
-            if avg is True:
+        if avg is True:
                 return [x / len(user.msgs) for x in hours]
-            else:
+        else:
                 return hours
     else:
         for fi in user.files:
             hours[fi.time.hour] += 1
-            if avg is True:
+        if avg is True:
                 return [x / len(user.files) for x in hours]
-            else:
+        else:
                 return hours
 
 def msgPerDOW(user, msg, avg):
@@ -118,6 +118,29 @@ def msgPerDOW(user, msg, avg):
         else:
             return DOW
 
+def mostActiveDay(user):
+    mad = {}
+    max = 0
+    acu = 0
+    maxDay = datetime
+    for i in range(len(msgList)):
+        if msgList[i-1].time.day == msgList[i].time.day and msgList[i-1].time.month == msgList[i].time.month:
+            acu = acu + 1
+        elif acu > max:
+            max = acu
+            maxDay = msgList[i].time
+            acu = 0
+    mad[acu] = maxDay.strftime('%d-%m-%Y')
+    for i in range(len(msgList)):
+        if msgList[i-1].time.day == msgList[i].time.day and msgList[i-1].time.month == msgList[i].time.month:
+            acu = acu + 1
+        elif acu == max:
+            maxDay = msgList[i].time
+            acu = 0
+            mad[acu] = maxDay.strftime('%d-%m-%Y')
+    return mad
+
+
 filepath = "WaPy/elena.txt"
 msgList = []
 userList = []
@@ -125,3 +148,4 @@ userList = []
 readFromFile(filepath, msgList)
 createUsers(msgList, userList)
 assignMsgs(msgList, userList)
+print(mostActiveDay(userList[0]))
