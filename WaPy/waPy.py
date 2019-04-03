@@ -90,16 +90,17 @@ def msgPerHour(user, msg, avg):
         for msg in user.msgs:
             hours[msg.time.hour] += 1
         if avg is True:
-                return [x / len(user.msgs) for x in hours]
+            return [x / len(user.msgs) for x in hours]
         else:
-                return hours
+            return hours
     else:
         for fi in user.files:
             hours[fi.time.hour] += 1
         if avg is True:
-                return [x / len(user.files) for x in hours]
+            return [x / len(user.files) for x in hours]
         else:
-                return hours
+            return hours
+
 
 def msgPerDOW(user, msg, avg):
     DOW = [0]*7
@@ -118,28 +119,27 @@ def msgPerDOW(user, msg, avg):
         else:
             return DOW
 
+
 def mostActiveDay(user):
     mad = {}
     max = 0
     acu = 0
-    maxDay = datetime
-    for i in range(len(msgList)):
-        if msgList[i-1].time.day == msgList[i].time.day and msgList[i-1].time.month == msgList[i].time.month:
+    for i in range(len(user.msgs)-1):
+        if user.msgs[i+1].time.day == user.msgs[i].time.day and user.msgs[i+1].time.month == user.msgs[i].time.month:
             acu = acu + 1
         elif acu > max:
             max = acu
-            maxDay = msgList[i].time
             acu = 0
-    mad[acu] = maxDay.strftime('%d-%m-%Y')
-    for i in range(len(msgList)):
-        if msgList[i-1].time.day == msgList[i].time.day and msgList[i-1].time.month == msgList[i].time.month:
+    mad[acu] = user.msgs[i].time.strftime('%d-%m-%Y')
+    
+    acu = 0
+    for i in range(len(user.msgs)-1):
+        if user.msgs[i+1].time.day == user.msgs[i].time.day and user.msgs[i+1].time.month == user.msgs[i].time.month:
             acu = acu + 1
         elif acu == max:
-            maxDay = msgList[i].time
-            acu = 0
-            mad[acu] = maxDay.strftime('%d-%m-%Y')
-    return mad
+            mad[acu] = user.msgs[i].time.strftime('%d-%m-%Y')
 
+    return mad
 
 filepath = "WaPy/elena.txt"
 msgList = []
@@ -148,4 +148,3 @@ userList = []
 readFromFile(filepath, msgList)
 createUsers(msgList, userList)
 assignMsgs(msgList, userList)
-print(mostActiveDay(userList[0]))
