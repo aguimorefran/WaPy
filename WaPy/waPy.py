@@ -141,6 +141,12 @@ def mostActiveDay(user):
 
     return mad
 
+def avgWordsPerMsg(user):
+    avg = 0
+    for msg in user.msgs:
+        avg += len(msg.content.split())
+    return avg/len(user.msgs)
+
 filepath = "WaPy/elena.txt"
 msgList = []
 userList = []
@@ -148,3 +154,6 @@ userList = []
 readFromFile(filepath, msgList)
 createUsers(msgList, userList)
 assignMsgs(msgList, userList)
+
+for u in userList:
+    print("%s = %d" %(u.name, avgWordsPerMsg(u)))
