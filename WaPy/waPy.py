@@ -1,4 +1,5 @@
 import datetime
+import string
 
 
 class Message:
@@ -147,13 +148,38 @@ def avgWordsPerMsg(user):
         avg += len(msg.content.split())
     return avg/len(user.msgs)
 
+def getRawWords(msgList, rawWordList):
+    for msg in msgList:
+        for w in msg.content.split():
+            w = w.lower().strip(",.!¡?¿;:-_")
+            if w not in rawWordList:
+                rawWordList.append(w)
+    rawWordList.sort()
+
+def createAlphabet(alphaPath, alphabet):
+    with open(alphaPath, encoding="utf8") as fp:
+        line = fp.readline()
+        while line:
+            alphabet.append(line)
+            line = fp.readline()
+    alphabet.sort()
+
+def createDict(alphabet, dictfilepath):
+
+
+
 filepath = "WaPy/elena.txt"
+alphaPath = "WaPy/alfa.txt"
+dictfilepath = "WaPy/dict.txt"
+alphabet = []
 msgList = []
 userList = []
+rawWordList = []
+niceDict = []
 
 readFromFile(filepath, msgList)
 createUsers(msgList, userList)
 assignMsgs(msgList, userList)
-
-for u in userList:
-    print("%s = %d" %(u.name, avgWordsPerMsg(u)))
+getRawWords(msgList, rawWordList)
+createAlphabet(alphaPath, alphabet)
+fixWordInput(rawWordList, niceDict)
