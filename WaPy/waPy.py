@@ -2,6 +2,12 @@ import datetime
 import string
 
 
+# TODO:avgResponseTime
+# avgFollowingMsgs
+# timesDoubleTexted
+# messages and media per DOW, hour, month
+
+
 class Message:
 
     def __init__(self, username, line, content, isMedia, time):
@@ -15,10 +21,6 @@ class Message:
 class User:
     def __init__(self, username):
         self.username = username
-        self.numberMessages = 0
-        self.numberMedia = 0
-        self.averageResponseTimeMinutes = 0
-        self.timesDoubleTexted = 0
 
 
 #   Parses a line of message into its different fields
@@ -56,35 +58,27 @@ def readFromFile(filepath):
     return msgList
 
 
-def isUserAdded(userList, username):
-    for u in userList:
-        if u.username == username:
-            return True
-    return False
-
-
 # creates a list of user objects
 def createUserList(msgList):
     userList = []
-    for msg in msgList:
-        if not isUserAdded(userList, msg.username):
-            userList.append(User(msg.username))
+    for msg in msgList: 
+        if msg.username not in userList: 
+            userList.append(msg.username)
     return userList
 
 
 # mode = text (counts only text messages) / mode = media (counts only media messages)
-def numberMessages(userList, msgList, mode):
+def getNumberMessages(userList, msgList, mode):
     nm = {}
+    # initialize dictionary with keys = users
     for u in userList:
-        if u not in nm.keys(): nm[u.username] = 0
+        if u not in nm.keys(): nm[u] = 0
     for msg in msgList:
-        if (mode == "text" and msg.content.find("<Media omitted>")) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
+        if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username] += 1
     return nm
 
+
+# main
 msgList = readFromFile("WaPy/Cb.txt")
 userList = createUserList(msgList)
-numberMessagesMedia = numberMessages(userList, msgList, "text")
-numerMessagesMedia = numberMessages(userList, msgList, "media")
-print(numberMessagesMedia)
-print(numerMessagesMedia)
