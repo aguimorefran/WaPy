@@ -4,11 +4,21 @@ import string
 
 class Message:
 
-    def __init__(self, user, line, content, time):
+    def __init__(self, username, line, content, isMedia, time):
         self.line = line
-        self.user = user
+        self.username = username
         self.content = content
+        self.isMedia = isMedia
         self.time = time
+
+
+class User:
+    def __init__(self, username):
+        self.username = username
+        self.numberMessages = 0
+        self.numberMedia = 0
+        self.averageResponseTimeMinutes = 0
+        self.timesDoubleTexted = 0
 
 
 #   Parses a line of message into its different fields
@@ -25,9 +35,13 @@ def parseMsg(input):
     content = line[20:].split(':')[1]
     user = line[20:].split(':')[0]
     time = datetime.datetime(year, month, day, hour, minute)
-    return Message(user, line, content, time)
+    isMedia = False
+    if content.find("Media omitted"): isMedia = True
+    return Message(user, line, content, isMedia, time)
 
 #   read conversation file and create a list with its parsed msgs
+
+
 def readFromFile(filepath):
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -41,5 +55,36 @@ def readFromFile(filepath):
     fp.close()
     return msgList
 
-#TODO: create user class with msg/media per hour and DOW
-#TODO: tener en cuenta dejarlo todo organizado en clases
+
+def isUserAdded(userList, username):
+    for u in userList:
+        if u.username == username:
+            return True
+    return False
+
+
+# creates a list of user objects
+def createUserList(msgList):
+    userList = []
+    for msg in msgList:
+        if not isUserAdded(userList, msg.username):
+            userList.append(User(msg.username))
+    return userList
+
+
+# mode = text (counts only text messages) / mode = media (counts only media messages)
+def numberMessages(userList, msgList, mode):
+    nm = {}
+    for u in userList:
+        if u not in nm.keys(): nm[u.username] = 0
+    for msg in msgList:
+        if (mode == "text" and msg.content.find("<Media omitted>")) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
+            nm[msg.username] += 1
+    return nm
+
+msgList = readFromFile("WaPy/Cb.txt")
+userList = createUserList(msgList)
+numberMessagesMedia = numberMessages(userList, msgList, "text")
+numerMessagesMedia = numberMessages(userList, msgList, "media")
+print(numberMessagesMedia)
+print(numerMessagesMedia)
