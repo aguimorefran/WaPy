@@ -256,7 +256,7 @@ def plotAverageWordsPerHour(userList, messageList):
     for u in userList:
         userData.append(dict(a[u]))
 
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
     fig, ax = plt.subplots()
     ind = np.arange(24)
     width = 0.35
@@ -292,7 +292,7 @@ def getAvgWordsPerDOW(userList, msgList):
         nm[msg.username][msg.time.weekday()] += len(msg.content.split())
     for u in nm:
         for h in nm[u]:
-            nm[u][h] = round(nm[u][h] / getDaysLong(msgList), 2)
+            nm[u][h] = round(nm[u][h] / (getDaysLong(msgList)/7), 2)
 
     return nm
 
@@ -306,7 +306,7 @@ def plotAverageWordsPerDOW(userList, msgList):
     for u in userList:
         userData.append(dict(a[u]))
 
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
     fig, ax = plt.subplots()
     ind = np.arange(7)
     width = 0.35
@@ -333,7 +333,7 @@ def plotAverageWordsPerDOW(userList, msgList):
 
 
 # main
-filename = "WaPy/laura.txt"
+filename = "WaPy/homo.txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
 plotAverageWordsPerHour(userList, msgList)
