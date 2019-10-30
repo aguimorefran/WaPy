@@ -1,10 +1,12 @@
 import datetime
+import os
 import string
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 # TODO:avgResponseTime
+# mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # timesDoubleTexted
 # messages and media per DOW, hour, month
@@ -20,15 +22,10 @@ class Message:
         self.time = time
 
 
-class User:
-    def __init__(self, username):
-        self.username = username
-
-
-#removes emojis
+# removes emojis
 def deEmojify(inputString):
     return inputString.encode('ascii', 'ignore').decode('ascii')
-    
+
 
 #   Parses a line of message into its different fields
 def parseMsg(input):
@@ -46,7 +43,8 @@ def parseMsg(input):
     user = line[20:].split(':')[0]
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
-    if content.find("Media omitted"): isMedia = True
+    if content.find("Media omitted"):
+        isMedia = True
     return Message(user, line, content, isMedia, time)
 
 #   read conversation file and create a list with its parsed msgs
@@ -57,8 +55,9 @@ def readFromFile(filepath):
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
         while line:
-            if len(line) > 0 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/"):
+            if len(line) > 0 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
+                # print(line)
                 msg = parseMsg(line)
                 msgList.append(msg)
             line = fp.readline()
@@ -69,8 +68,8 @@ def readFromFile(filepath):
 # creates a list of user objects
 def createUserList(msgList):
     userList = []
-    for msg in msgList: 
-        if msg.username not in userList: 
+    for msg in msgList:
+        if msg.username not in userList:
             userList.append(msg.username)
     return userList
 
@@ -80,7 +79,8 @@ def getNumberMessages(userList, msgList, mode):
     nm = {}
     # initialize dictionary with keys = users
     for u in userList:
-        if u not in nm.keys(): nm[u] = 0
+        if u not in nm.keys():
+            nm[u] = 0
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username] += 1
@@ -100,8 +100,34 @@ def getMessagesPerHour(userList, msgList, mode):
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username][msg.time.hour] += 1
-    
+
     return nm
+
+
+# average message length
+def getAvgMessageLength(userList, msgList):
+    avl = {}
+    msgPerUser = getMessagesPerUser(userList, msgList)
+    for u in userList:
+        if u not in avl.keys():
+            avl[u] = 0
+    for m in msgList:
+        avl[m.username] += len(m.content.split())
+    for k in avl.keys():
+        avl[k] = round(avl[k] / msgPerUser[k], 2)
+    return avl
+
+
+# messages per user per conversation
+def getMessagesPerUser(userList, msgList):
+    avl = {}
+    for u in userList:
+        if u not in avl.keys():
+            avl[u] = 0
+    for m in msgList:
+        avl[m.username] += 1
+    return avl
+    
 
 # get the duration in days of the conversation
 def getDaysLong(msgList):
@@ -109,30 +135,49 @@ def getDaysLong(msgList):
     last = msgList[len(msgList)-1].time
     return (last-first).days
 
-def plotByDict(diccionario):
-    #TODO: pasar lo de abajo aqui y hacerlo universal
-    return None
+
+# saves to a file a plot of average text and media messages per hour per user
+def plotAverageMessagesPerHour(userList, msgList):
+    daysLong = getDaysLong(msgList)
+    if daysLong == 0:
+        daysLong = 1
+    userData = []
+    msgsPerHour = getMessagesPerHour(userList, msgList, "text")
+    for u in userList:
+        userData.append(dict(msgsPerHour[u]))
+    for d in userData:
+        for k in d.keys():
+            d[k] /= daysLong
+
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    fig, ax = plt.subplots()
+    ind = np.arange(24)
+    width = 0.35
+    i = 0
+    for x in userData:
+        ax.bar(ind + (i*width), x.values(), width,
+               color=colors[i % len(colors)], label=userList[i])
+        i += 1
+
+    ax.set_title("Average number of messages per hour")
+    ax.set_xticks(ind+width/2)
+    ax.set_xticklabels([i for i in range(0, 24)])
+    plt.xlabel("Hour")
+    plt.xticks(rotation=45)
+    ax.autoscale_view()
+    ax.legend()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/avgTextMsgsPerHour.png"
+    plt.savefig(filename)
+
 
 # main
-msgList = readFromFile("WaPy/lau.txt")
+filename = "WaPy/homo.txt"
+msgList = readFromFile(filename)
 userList = createUserList(msgList)
-print(userList)
-daysLong = getDaysLong(msgList)
-textMessagesPerHour = getMessagesPerHour(userList, msgList, "text")
-mediaMessagesPerHour = getMessagesPerHour(userList, msgList, "media")
-
-x = dict(textMessagesPerHour["Fco"])
-y = dict(textMessagesPerHour["Lau"])
-
-fig, ax = plt.subplots()
-ind = np.arange(len(x))
-width = 0.35
-p1 = ax.bar(ind, x.values(), width, color="b")
-p2 = ax.bar(ind+width, y.values(), width, color="r")
-ax.set_title("Total messages per hour")
-ax.set_xticks(ind + width/2)
-ax.set_xticklabels([i for i in range(0,23)])
-
-ax.legend((p1[0], p2[0]), ('Fco', 'Lau'))
-ax.autoscale_view()
-plt.show()
+plotAverageMessagesPerHour(userList, msgList)
+a = getAvgMessageLength(userList, msgList)
+print(a)
+print(getMessagesPerUser(userList, msgList))
