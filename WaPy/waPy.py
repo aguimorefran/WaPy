@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# TODO:avgResponseTime
+# TODO:
+# plotTotalWordsPerWeekOfYear
+# avgResponseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # timesDoubleTexted
@@ -127,7 +129,7 @@ def getMessagesPerUser(userList, msgList):
     for m in msgList:
         avl[m.username] += 1
     return avl
-    
+
 
 # get the duration in days of the conversation
 def getDaysLong(msgList):
@@ -137,12 +139,12 @@ def getDaysLong(msgList):
 
 
 # saves to a file a plot of average text and media messages per hour per user
-def plotAverageMessagesPerHour(userList, msgList):
+def plotAverageMessagesPerHour(userList, msgList, mode):
     daysLong = getDaysLong(msgList)
     if daysLong == 0:
         daysLong = 1
     userData = []
-    msgsPerHour = getMessagesPerHour(userList, msgList, "text")
+    msgsPerHour = getMessagesPerHour(userList, msgList, mode)
     for u in userList:
         userData.append(dict(msgsPerHour[u]))
     for d in userData:
@@ -169,15 +171,170 @@ def plotAverageMessagesPerHour(userList, msgList):
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/avgTextMsgsPerHour.png"
+    filename = "plots/avg" + mode + "messagesPerHour.png"
+    plt.savefig(filename)
+
+
+# plots msgs per dow
+def plotAverageMessagesPerDOW(userList, msgList, mode):
+    daysLong = getDaysLong(msgList)
+    if daysLong == 0:
+        daysLong = 1
+    userData = []
+    msgPerDOW = getMessagesPerDOW(userList, msgList, mode)
+    for u in userList:
+        userData.append(dict(msgPerDOW[u]))
+    for d in userData:
+        for k in d.keys():
+            d[k] /= 7
+
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    fig, ax = plt.subplots()
+    ind = np.arange(7)
+    width = 0.35
+    i = 0
+    for x in userData:
+        ax.bar(ind + (i*width), x.values(), width,
+               color=colors[i % len(colors)], label=userList[i])
+        i += 1
+
+    ax.set_title("Average number of messages per day of week")
+    ax.set_xticks(ind+width/2)
+    ax.set_xticklabels(["Monday", "Tuesday", "Wednesday",
+                        "Thursday", "Friday", "Saturday", "Sunday"])
+    plt.xlabel("Day of week")
+    plt.xticks(rotation=30)
+    ax.autoscale_view()
+    ax.legend()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/avg" + mode + "messagesPerDOW.png"
+    plt.savefig(filename)
+
+
+def getMessagesPerDOW(userList, msgList, mode):
+    nm = {}
+    # initialize users
+    for u in userList:
+        if u not in nm.keys():
+            h = {}
+            for i in range(7):
+                h[i] = 0
+            nm[u] = h
+    for msg in msgList:
+        if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
+            nm[msg.username][msg.time.weekday()] += 1
+
+    return nm
+
+
+def getAverageWordsPerHour(userList, msgList):
+    nm = {}
+    # initialize users
+    for u in userList:
+        if u not in nm.keys():
+            h = {}
+            for i in range(24):
+                h[i] = 0
+            nm[u] = h
+    for msg in msgList:
+        nm[msg.username][msg.time.hour] += len(msg.content.split())
+    for u in nm:
+        for h in nm[u]:
+            nm[u][h] = round(nm[u][h] / getDaysLong(msgList), 2)
+
+    return nm
+
+
+def plotAverageWordsPerHour(userList, messageList):
+    daysLong = getDaysLong(msgList)
+    if daysLong == 0:
+        daysLong = 1
+    userData = []
+    a = getAverageWordsPerHour(userList, msgList)
+    for u in userList:
+        userData.append(dict(a[u]))
+
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    fig, ax = plt.subplots()
+    ind = np.arange(24)
+    width = 0.35
+    i = 0
+    for x in userData:
+        ax.bar(ind + (i*width), x.values(), width,
+               color=colors[i % len(colors)], label=userList[i])
+        i += 1
+
+    ax.set_title("Average number of words per hour")
+    ax.set_xticks(ind+width/2)
+    ax.set_xticklabels([i for i in range(0, 24)])
+    plt.xlabel("Hour")
+    ax.autoscale_view()
+    ax.legend()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/avgMessagesPerHour.png"
+    plt.savefig(filename)
+
+
+def getAvgWordsPerDOW(userList, msgList):
+    nm = {}
+    # initialize users
+    for u in userList:
+        if u not in nm.keys():
+            h = {}
+            for i in range(7):
+                h[i] = 0
+            nm[u] = h
+    for msg in msgList:
+        nm[msg.username][msg.time.weekday()] += len(msg.content.split())
+    for u in nm:
+        for h in nm[u]:
+            nm[u][h] = round(nm[u][h] / getDaysLong(msgList), 2)
+
+    return nm
+
+
+def plotAverageWordsPerDOW(userList, msgList):
+    daysLong = getDaysLong(msgList)
+    if daysLong == 0:
+        daysLong = 1
+    userData = []
+    a = getAvgWordsPerDOW(userList, msgList)
+    for u in userList:
+        userData.append(dict(a[u]))
+
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', ]
+    fig, ax = plt.subplots()
+    ind = np.arange(7)
+    width = 0.35
+    i = 0
+    for x in userData:
+        ax.bar(ind + (i*width), x.values(), width,
+               color=colors[i % len(colors)], label=userList[i])
+        i += 1
+
+    ax.set_title("Average number of words per day of week")
+    ax.set_xticks(ind+width/2)
+    ax.set_xticklabels(["Monday", "Tuesday", "Wednesday",
+                        "Thursday", "Friday", "Saturday", "Sunday"])
+    plt.xlabel("Day of week")
+    plt.xticks(rotation=30)
+
+    ax.autoscale_view()
+    ax.legend()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/avgWordsPerDOW.png"
     plt.savefig(filename)
 
 
 # main
-filename = "WaPy/homo.txt"
+filename = "WaPy/laura.txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-plotAverageMessagesPerHour(userList, msgList)
-a = getAvgMessageLength(userList, msgList)
-print(a)
-print(getMessagesPerUser(userList, msgList))
+plotAverageWordsPerHour(userList, msgList)
+plotAverageWordsPerDOW(userList, msgList)
