@@ -79,6 +79,26 @@ def getNumberMessages(userList, msgList, mode):
     return nm
 
 
+# messages per hour. mode = text / mode = media
+def getMessagesPerHour(userList, msgList, mode):
+    nm = {}
+    # initialize users
+    for u in userList:
+        if u not in nm.keys():
+            h = {}
+            for i in range(24):
+                h[i] = 0
+            nm[u] = h
+    for msg in msgList:
+        if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
+            nm[msg.username][msg.time.hour] += 1
+    
+    return nm
+
+
 # main
 msgList = readFromFile("WaPy/Cb.txt")
 userList = createUserList(msgList)
+textMessagesPerHour = getMessagesPerHour(userList, msgList, "text")
+mediaMessagesPerHour = getMessagesPerHour(userList, msgList, "media")
+print(textMessagesPerHour)
