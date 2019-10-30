@@ -332,9 +332,15 @@ def plotAverageWordsPerDOW(userList, msgList):
     plt.savefig(filename)
 
 
+def getWordsByWeek(userList, msgList):
+    #TODO: terminar
+    return None
+
+
 # main
-filename = "WaPy/cataneros.txt"
+filename = "WaPy/lau.txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
 plotAverageWordsPerHour(userList, msgList)
 plotAverageWordsPerDOW(userList, msgList)
+print(getWordsByWeek(userList, msgList))
