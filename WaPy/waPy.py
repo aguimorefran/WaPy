@@ -242,7 +242,7 @@ def getAverageWordsPerHour(userList, msgList):
         nm[msg.username][msg.time.hour] += len(msg.content.split())
     for u in nm:
         for h in nm[u]:
-            nm[u][h] = round(nm[u][h] / getDaysLong(msgList), 2)
+            nm[u][h] = round(nm[u][h] / 24, 2)
 
     return nm
 
@@ -333,7 +333,7 @@ def plotAverageWordsPerDOW(userList, msgList):
 
 
 # main
-filename = "WaPy/homo.txt"
+filename = "WaPy/cataneros.txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
 plotAverageWordsPerHour(userList, msgList)
