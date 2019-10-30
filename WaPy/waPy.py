@@ -1,5 +1,7 @@
 import datetime
 import string
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 # TODO:avgResponseTime
@@ -23,12 +25,18 @@ class User:
         self.username = username
 
 
+#removes emojis
+def deEmojify(inputString):
+    return inputString.encode('ascii', 'ignore').decode('ascii')
+    
+
 #   Parses a line of message into its different fields
 def parseMsg(input):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
-    line = input.rstrip()
+
+    line = deEmojify(input.rstrip())
     day = int(line[0:2])
     month = int(line[3:5])
     year = int(line[6:10])
@@ -49,7 +57,7 @@ def readFromFile(filepath):
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
         while line:
-            if len(line) > 0 and line != "\n" and line.find("Messages to this chat and calls") == -1:
+            if len(line) > 0 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/"):
                 # parse line to message
                 msg = parseMsg(line)
                 msgList.append(msg)
@@ -95,10 +103,36 @@ def getMessagesPerHour(userList, msgList, mode):
     
     return nm
 
+# get the duration in days of the conversation
+def getDaysLong(msgList):
+    first = msgList[0].time
+    last = msgList[len(msgList)-1].time
+    return (last-first).days
+
+def plotByDict(diccionario):
+    #TODO: pasar lo de abajo aqui y hacerlo universal
+    return None
 
 # main
-msgList = readFromFile("WaPy/Cb.txt")
+msgList = readFromFile("WaPy/lau.txt")
 userList = createUserList(msgList)
+print(userList)
+daysLong = getDaysLong(msgList)
 textMessagesPerHour = getMessagesPerHour(userList, msgList, "text")
 mediaMessagesPerHour = getMessagesPerHour(userList, msgList, "media")
-print(textMessagesPerHour)
+
+x = dict(textMessagesPerHour["Fco"])
+y = dict(textMessagesPerHour["Lau"])
+
+fig, ax = plt.subplots()
+ind = np.arange(len(x))
+width = 0.35
+p1 = ax.bar(ind, x.values(), width, color="b")
+p2 = ax.bar(ind+width, y.values(), width, color="r")
+ax.set_title("Total messages per hour")
+ax.set_xticks(ind + width/2)
+ax.set_xticklabels([i for i in range(0,23)])
+
+ax.legend((p1[0], p2[0]), ('Fco', 'Lau'))
+ax.autoscale_view()
+plt.show()
