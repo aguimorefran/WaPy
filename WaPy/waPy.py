@@ -255,10 +255,35 @@ def getWordsByWeek(userList, msgList):
     return None
 
 
+def plotAverageMessageLength(userList, msgList, filename):
+    daysLong = getDaysLong(msgList)
+    userData = []
+    a = getAvgMessageLength(userList, msgList)
+    for u in userList:
+        userData.append(a[u])
+    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
+    fix, ax = plt.subplots()
+    ind = np.arange(len(userList))
+    width = 0.35
+    
+    ax.bar(ind, userData, width, color = colors)
+    ax.set_title("Average words per message\nDuration: " + str(daysLong) + " days")
+    ax.set_xticks(ind)
+    ax.set_xticklabels([userList[i] for i in range(len(userList))])
+    plt.xlabel("User")
+    ax.autoscale_view()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "avgWordsPerMessage.png"
+    plt.savefig(filename)
+
+
 # main
-conversationFile = "cb"
+conversationFile = "lau"
 filename = conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
 plotTotalWordsPerHour(userList, msgList, conversationFile)
 plotTotalWordsPerDOW(userList, msgList, conversationFile)
+plotAverageMessageLength(userList, msgList, conversationFile)
