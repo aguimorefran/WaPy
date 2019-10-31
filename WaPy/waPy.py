@@ -189,7 +189,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
 
     ax.set_title("Total number of words per hour\nDuration: " + str(daysLong) + " days")
     ax.set_xticks(ind+width/2)
-    ax.set_xticklabels([i for i in range(0, 24)])
+    ax.set_xticklabels([j for j in range(0, 24)])
     plt.xlabel("Hour")
     ax.autoscale_view()
     ax.legend()
@@ -269,7 +269,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     ax.bar(ind, userData, width, color = colors)
     ax.set_title("Average words per message\nDuration: " + str(daysLong) + " days")
     ax.set_xticks(ind)
-    ax.set_xticklabels([userList[i] for i in range(len(userList))])
+    ax.set_xticklabels([userList[j] for j in range(len(userList))])
     plt.xlabel("User")
     ax.autoscale_view()
 
@@ -279,6 +279,20 @@ def plotAverageMessageLength(userList, msgList, filename):
     plt.savefig(filename)
 
 
+def getTotalWordsPerDay(userList, msgList):
+    avl = {}
+    daysLong = getDaysLong(msgList)
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for i in range(0, daysLong):
+                h[i] = 0
+            avl[u] = h
+
+    dayCount = 0
+    #TODO
+    return avl
+
 # main
 conversationFile = "lau"
 filename = conversationFile + ".txt"
@@ -287,3 +301,4 @@ userList = createUserList(msgList)
 plotTotalWordsPerHour(userList, msgList, conversationFile)
 plotTotalWordsPerDOW(userList, msgList, conversationFile)
 plotAverageMessageLength(userList, msgList, conversationFile)
+print(getTotalWordsPerDay(userList,msgList))
