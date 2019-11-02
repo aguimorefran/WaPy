@@ -201,6 +201,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     plt.xlabel("Hour")
     ax.autoscale_view()
     ax.legend()
+    plt.grid(True)
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
@@ -254,7 +255,8 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     plt.xticks(rotation=30)
 
     ax.autoscale_view()
-    ax.legend()
+    ax.legend()    
+    plt.grid(True)
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
@@ -282,7 +284,8 @@ def plotAverageMessageLength(userList, msgList, filename):
     ax.set_xticks(ind)
     ax.set_xticklabels([userList[j] for j in range(len(userList))])
     plt.xlabel("User")
-    ax.autoscale_view()
+    ax.autoscale_view()   
+    plt.grid(True)
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
@@ -333,46 +336,30 @@ def getDaysList(msgList):
     return dates
 
 
-def plotTotalWordsPerDayPerUser(userList, msgList, filename):
-    daysLong = getDaysLong(msgList)
-    monthsLong = getMonthTicks(msgList)
-    if daysLong == 0:
-        daysLong = 1
-    userData = []
-    a = getTotalWordsPerDayPerUser(userList, msgList)
+def getWordPercentage(userList, msgList):
+    avl = {}
+    total = 0
     for u in userList:
-        userData.append(dict(a[u]))
+        if u not in avl.keys():
+            avl[u] = 0
+    for msg in msgList:
+        avl[msg.username] += len(msg.content.split())
+        total += len(msg.content.split())
+    for k in avl.keys():
+        avl[k] = round((avl[k]/total)*100, 2)
+    return avl
 
-    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
-    fig, ax = plt.subplots()
-    ind = np.arange(daysLong)
-    width = 0.35
-    i = 0
-    for x in userData:
-        ax.bar(ind + (i*width), x.values(), width,
-               color=colors[i % len(colors)], label=userList[i])
-        i += 1
-
-    ax.set_title(
-        "Total words per day\nDuration: " + str(daysLong) + " days\n" + getFirstLastDateString(msgList))
-    ax.set_xticks((ind+width)*daysLong/len(monthsLong))
-    ax.set_xticklabels(monthsLong)
-    plt.xlabel("Day")
-    plt.xticks(rotation=30)
-
-    ax.autoscale_view()
-    ax.legend()
-
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "totalWordsPerDayPerUser.png"
-    print("Generating ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
-    print("***********************")
+def getTotalWords(userList, msgList):
+    avl = {}
+    for u in userList:
+        if u not in avl.keys():
+            avl[u] = 0
+    for msg in msgList:
+        avl[msg.username] += len(msg.content.split())
+    return avl
 
 
-def test(userList, msgList):
+def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     nMonts = len(getMonthTicks(msgList))
     daysLong = getDaysLong(msgList)
     daysList = getDaysList(msgList)
@@ -396,30 +383,53 @@ def test(userList, msgList):
             daysList = daysList[:len(daysList)-dif]
         elif len(x.values()) > len(daysList):
             valores = valores[:len(valores)-dif]
-        ax.bar(ind + (i*width), valores, width, color=colors[i % len(colors)], label=userList[i])
+        ax.bar(ind + (i*width), valores, width,
+               color=colors[i % len(colors)], label=userList[i])
         i += 1
     ax.set_title(
         "Words per day\nDuration: " + str(len(daysList)) + " days\n" + getFirstLastDateString(msgList))
     plt.xlabel("Day")
     plt.ylabel("Words")
 
-    #ticks
+    # ticks
     nTicks = 10
-    tickLabels = []
-    
-    for i in range(nTicks):
-        w = len(daysList)/nTicks
-        k = int(w*i)
-        tickLabels.append(daysList[k])
-    tickLabels.append(daysList[len(daysList)-1])
-    #TODO: ticks
+    indTick = np.arange(0, len(daysList), nTicks)
+    tickLabels = [daysList[i] for i in indTick]
+    ax.set_xticks(indTick)
+    ax.set_xticklabels(tickLabels)
     plt.grid(True)
-    plt.show()
+    ax.legend()
 
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "totalWordsPerDayPerUser.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
+
+def plotTotalWordPercentage(userList, msgList, filename):
+    daysLong = getDaysLong(msgList)
+    percentageList = getWordPercentage(userList, msgList)
+    labels = userList
+    sizes = []
+    for x in percentageList:
+        sizes.append(percentageList[x])
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, startangle=90, autopct='%1.1f%%')
+    ax.axis("equal")
+    ax.set_title("Percentage of words per user\nDuration: " + str(daysLong) + " days\n" + getFirstLastDateString(msgList))
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "TotalWordPercentage.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
 
 # main
-conversationFile = "lau"
+conversationFile = "clown"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-test(userList, msgList)
