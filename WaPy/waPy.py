@@ -131,7 +131,7 @@ def getMessagesPerUser(userList, msgList):
             avl[u] = 0
     for m in msgList:
         avl[m.username] += 1
-    return avl
+    return dict(collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1))))
 
 
 # get the duration in days of the conversation
@@ -433,7 +433,7 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
     print("***********************")
 
 
-def plotTotalWordPercentageBar(userList, msgList, filename):
+def plotTotalWordsBar(userList, msgList, filename):
     daysLong = getDaysLong
     wordTotal = getTotalWords(userList, msgList)
     users = list(wordTotal.keys())
@@ -450,7 +450,38 @@ def plotTotalWordPercentageBar(userList, msgList, filename):
     ax.set_yticks(ind)
     ax.set_yticklabels(users)
 
-    plt.show()
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "TotalWordPerUser.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
+def plotMessagesPerUser(userList, msgList, filename):
+    daysLong = getDaysLong
+    msgTotal = getMessagesPerUser(userList, msgList)
+    print(msgTotal)
+    users = list(msgTotal.keys())
+    values = list(msgTotal.values())
+
+    ind = np.arange(len(userList))
+    width = 0.35
+    fig, ax = plt.subplots()
+    ax.barh(ind, values, width, align="center")
+    ax.set_title("Number of messages per user\nDuration: " +
+                 str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+    ax.grid()
+    ax.set_yticks(ind)
+    ax.set_yticklabels(users)
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "TotalMsgPerUser.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
 
 
 # main
@@ -458,4 +489,3 @@ conversationFile = "clown"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-plotTotalWordPercentageBar(userList, msgList, filename)
