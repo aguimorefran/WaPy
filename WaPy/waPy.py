@@ -4,6 +4,8 @@ import string
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter, MaxNLocator
+import operator
+import collections
 import numpy as np
 
 
@@ -255,7 +257,7 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     plt.xticks(rotation=30)
 
     ax.autoscale_view()
-    ax.legend()    
+    ax.legend()
     plt.grid(True)
 
     if not os.path.exists("plots"):
@@ -284,7 +286,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     ax.set_xticks(ind)
     ax.set_xticklabels([userList[j] for j in range(len(userList))])
     plt.xlabel("User")
-    ax.autoscale_view()   
+    ax.autoscale_view()
     plt.grid(True)
 
     if not os.path.exists("plots"):
@@ -349,6 +351,7 @@ def getWordPercentage(userList, msgList):
         avl[k] = round((avl[k]/total)*100, 2)
     return avl
 
+
 def getTotalWords(userList, msgList):
     avl = {}
     for u in userList:
@@ -356,7 +359,7 @@ def getTotalWords(userList, msgList):
             avl[u] = 0
     for msg in msgList:
         avl[msg.username] += len(msg.content.split())
-    return avl
+    return dict(collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1))))
 
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
@@ -409,7 +412,7 @@ def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     print("***********************")
 
 
-def plotTotalWordPercentage(userList, msgList, filename):
+def plotTotalWordPercentagePie(userList, msgList, filename):
     daysLong = getDaysLong(msgList)
     percentageList = getWordPercentage(userList, msgList)
     labels = userList
@@ -419,7 +422,8 @@ def plotTotalWordPercentage(userList, msgList, filename):
     fig, ax = plt.subplots()
     ax.pie(sizes, labels=labels, startangle=90, autopct='%1.1f%%')
     ax.axis("equal")
-    ax.set_title("Percentage of words per user\nDuration: " + str(daysLong) + " days\n" + getFirstLastDateString(msgList))
+    ax.set_title("Percentage of words per user\nDuration: " +
+                 str(daysLong) + " days\n" + getFirstLastDateString(msgList))
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "TotalWordPercentage.png"
@@ -428,8 +432,30 @@ def plotTotalWordPercentage(userList, msgList, filename):
     print("Generated: ", filename)
     print("***********************")
 
+
+def plotTotalWordPercentageBar(userList, msgList, filename):
+    daysLong = getDaysLong
+    wordTotal = getTotalWords(userList, msgList)
+    users = list(wordTotal.keys())
+    values = list(wordTotal.values())
+
+    ind = np.arange(len(userList))
+    width = 0.35
+    fig, ax = plt.subplots()
+    ax.barh(ind, values, width, align="center")
+    ax.set_title("Number of words per user\nDuration: " +
+                 str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+    print(users)
+    ax.grid()
+    ax.set_yticks(ind)
+    ax.set_yticklabels(users)
+
+    plt.show()
+
+
 # main
 conversationFile = "clown"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
+plotTotalWordPercentageBar(userList, msgList, filename)
