@@ -135,7 +135,8 @@ def getMessagesPerUser(userList, msgList):
 def getDaysLong(msgList):
     first = msgList[0].time
     last = msgList[len(msgList)-1].time
-    return (last-first).days
+    return (last-first).days+1
+
 
 def getMessagesPerDOW(userList, msgList, mode):
     nm = {}
@@ -187,7 +188,8 @@ def plotTotalWordsPerHour(userList, messageList, filename):
                color=colors[i % len(colors)], label=userList[i])
         i += 1
 
-    ax.set_title("Total number of words per hour\nDuration: " + str(daysLong) + " days")
+    ax.set_title("Total number of words per hour\nDuration: " +
+                 str(daysLong) + " days")
     ax.set_xticks(ind+width/2)
     ax.set_xticklabels([j for j in range(0, 24)])
     plt.xlabel("Hour")
@@ -197,7 +199,8 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "totalMessagesPerHour.png"
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
 
 
 def getTotalWordsPerDOW(userList, msgList):
@@ -234,7 +237,8 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
                color=colors[i % len(colors)], label=userList[i])
         i += 1
 
-    ax.set_title("Average number of words per day of week\nDuration: " + str(daysLong) + " days")
+    ax.set_title(
+        "Average number of words per day of week\nDuration: " + str(daysLong) + " days")
     ax.set_xticks(ind+width/2)
     ax.set_xticklabels(["Monday", "Tuesday", "Wednesday",
                         "Thursday", "Friday", "Saturday", "Sunday"])
@@ -247,12 +251,8 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "totalWordsPerDOW.png"
-    plt.savefig(filename)
-
-
-def getWordsByWeek(userList, msgList):
-    #TODO: terminar
-    return None
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
 
 
 def plotAverageMessageLength(userList, msgList, filename):
@@ -265,9 +265,10 @@ def plotAverageMessageLength(userList, msgList, filename):
     fix, ax = plt.subplots()
     ind = np.arange(len(userList))
     width = 0.35
-    
-    ax.bar(ind, userData, width, color = colors)
-    ax.set_title("Average words per message\nDuration: " + str(daysLong) + " days")
+
+    ax.bar(ind, userData, width, color=colors)
+    ax.set_title("Average words per message\nDuration: " +
+                 str(daysLong) + " days")
     ax.set_xticks(ind)
     ax.set_xticklabels([userList[j] for j in range(len(userList))])
     plt.xlabel("User")
@@ -276,29 +277,80 @@ def plotAverageMessageLength(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "avgWordsPerMessage.png"
-    plt.savefig(filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
 
 
-def getTotalWordsPerDay(userList, msgList):
+def getMonthTicks(msgList):
+    months = []
+    for msg in msgList:
+        m = str(msg.time.month) + "-" + str(msg.time.year)
+        if m not in months:
+            months.append(m)
+    return months
+
+
+def getTotalWordsPerDayPerUser(userList, msgList):
     avl = {}
     daysLong = getDaysLong(msgList)
     for u in userList:
         if u not in avl.keys():
             h = {}
-            for i in range(0, daysLong):
+            for i in range(daysLong):
                 h[i] = 0
             avl[u] = h
 
     dayCount = 0
-    #TODO
+    for i in range(len(msgList)-1):
+        if msgList[i+1].time.date() > msgList[i].time.date():
+            dayCount += 1
+        avl[msgList[i].username][dayCount] += len(msgList[i].content.split())
+        #FIXME: tira error de diccionario
+
     return avl
 
+
+def plotTotalWordsPerDayPerUser(userList, msgList, filename):
+    daysLong = getDaysLong(msgList)
+    monthsLong = getMonthTicks(msgList)
+    if daysLong == 0:
+        daysLong = 1
+    userData = []
+    a = getTotalWordsPerDayPerUser(userList, msgList)
+    for u in userList:
+        userData.append(dict(a[u]))
+
+    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
+    fig, ax = plt.subplots()
+    ind = np.arange(daysLong)
+    width = 0.35
+    i = 0
+    for x in userData:
+        ax.bar(ind + (i*width), x.values(), width,
+               color=colors[i % len(colors)], label=userList[i])
+        i += 1
+
+    ax.set_title(
+        "Total words per day\nDuration: " + str(daysLong) + " days")
+    ax.set_xticks((ind+width)*daysLong/len(monthsLong))
+    ax.set_xticklabels(monthsLong)
+    plt.xlabel("Day")
+    plt.xticks(rotation=30)
+
+    ax.autoscale_view()
+    ax.legend()
+
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "totalWordsPerDayPerUser.png"
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+
+
 # main
-conversationFile = "lau"
-filename = conversationFile + ".txt"
+conversationFile = "homo"
+filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
+plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
 plotTotalWordsPerHour(userList, msgList, conversationFile)
-plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotAverageMessageLength(userList, msgList, conversationFile)
-print(getTotalWordsPerDay(userList,msgList))
