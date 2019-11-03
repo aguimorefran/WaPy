@@ -10,6 +10,9 @@ import numpy as np
 
 
 # TODO:
+# emoji counter:
+# most repeated
+# who sends the most
 # plotTotalWordsPerWeekOfYear
 # avgResponseTime
 # mostRelevantWord per DOW, hour, user
@@ -158,6 +161,7 @@ def getMessagesPerDOW(userList, msgList, mode):
     return nm
 
 
+# returns a dictionary of the sum of all words per hour of day / user
 def getTotalWordsPerHour(userList, msgList):
     nm = {}
     # initialize users
@@ -173,6 +177,7 @@ def getTotalWordsPerHour(userList, msgList):
     return nm
 
 
+# returns a string with the datetimes of the first and last day of the msgList
 def getFirstLastDateString(msgList):
     return str(msgList[0].time.date()) + " - " + str(msgList[len(msgList)-1].time.date())
 
@@ -214,6 +219,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     print("***********************")
 
 
+# returns the sum of all words sorted by day of the week / user
 def getTotalWordsPerDOW(userList, msgList):
     nm = {}
     # initialize users
@@ -328,6 +334,7 @@ def getTotalWordsPerDayPerUser(userList, msgList):
     return avl
 
 
+# returns a list of the datetimes of all the days in the msgList
 def getDaysList(msgList):
     dates = []
     i = 0
@@ -338,6 +345,7 @@ def getDaysList(msgList):
     return dates
 
 
+# returns a dictionary with the percentage of words by user
 def getWordPercentage(userList, msgList):
     avl = {}
     total = 0
@@ -352,6 +360,7 @@ def getWordPercentage(userList, msgList):
     return avl
 
 
+# returns a dictionary the total words said by each user
 def getTotalWords(userList, msgList):
     avl = {}
     for u in userList:
@@ -363,6 +372,7 @@ def getTotalWords(userList, msgList):
 
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
+    # FIXME: fix days
     nMonts = len(getMonthTicks(msgList))
     daysLong = getDaysLong(msgList)
     daysList = getDaysList(msgList)
@@ -458,6 +468,7 @@ def plotTotalWordsBar(userList, msgList, filename):
     print("Generated: ", filename)
     print("***********************")
 
+
 def plotMessagesPerUser(userList, msgList, filename):
     daysLong = getDaysLong
     msgTotal = getMessagesPerUser(userList, msgList)
@@ -477,7 +488,7 @@ def plotMessagesPerUser(userList, msgList, filename):
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "TotalMsgPerUser.png"
+    filename = "plots/" + filename + "TotalWordPerUser.png"
     print("Generating ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -485,7 +496,13 @@ def plotMessagesPerUser(userList, msgList, filename):
 
 
 # main
-conversationFile = "clown"
+conversationFile = "juanma"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
+plotAverageMessageLength(userList, msgList, conversationFile)
+plotMessagesPerUser(userList, msgList, conversationFile)
+plotTotalWordsBar(userList, msgList, conversationFile)
+plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+plotTotalWordsPerDOW(userList, msgList, conversationFile)
+plotTotalWordsPerHour(userList, msgList, conversationFile)
