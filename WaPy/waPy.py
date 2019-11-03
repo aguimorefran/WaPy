@@ -11,10 +11,8 @@ import numpy as np
 
 # TODO:
 # emoji counter:
-# most repeated
-# who sends the most
-# plotTotalWordsPerWeekOfYear
-# avgResponseTime
+# most repeated emoji
+# who sends the most emojis
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # timesDoubleTexted
@@ -84,11 +82,7 @@ def createUserList(msgList):
 
 # mode = text (counts only text messages) / mode = media (counts only media messages)
 def getNumberMessages(userList, msgList, mode):
-    nm = {}
-    # initialize dictionary with keys = users
-    for u in userList:
-        if u not in nm.keys():
-            nm[u] = 0
+    nm = dict.fromkeys(userList)
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username] += 1
@@ -97,14 +91,8 @@ def getNumberMessages(userList, msgList, mode):
 
 # messages per hour. mode = text / mode = media
 def getMessagesPerHour(userList, msgList, mode):
-    nm = {}
-    # initialize users
-    for u in userList:
-        if u not in nm.keys():
-            h = {}
-            for i in range(24):
-                h[i] = 0
-            nm[u] = h
+    h = dict.fromkeys(range(24), 0)
+    nm = dict.fromkeys(userList, h)
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username][msg.time.hour] += 1
@@ -114,11 +102,8 @@ def getMessagesPerHour(userList, msgList, mode):
 
 # average message length
 def getAvgMessageLength(userList, msgList):
-    avl = {}
+    avl = dict.fromkeys(userList, 0)
     msgPerUser = getMessagesPerUser(userList, msgList)
-    for u in userList:
-        if u not in avl.keys():
-            avl[u] = 0
     for m in msgList:
         avl[m.username] += len(m.content.split())
     for k in avl.keys():
@@ -128,10 +113,7 @@ def getAvgMessageLength(userList, msgList):
 
 # messages per user per conversation
 def getMessagesPerUser(userList, msgList):
-    avl = {}
-    for u in userList:
-        if u not in avl.keys():
-            avl[u] = 0
+    avl = dict.fromkeys(userList, 0)
     for m in msgList:
         avl[m.username] += 1
     return dict(collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1))))
@@ -146,14 +128,8 @@ def getDaysLong(msgList):
 
 # gets messages per day of week by user
 def getMessagesPerDOW(userList, msgList, mode):
-    nm = {}
-    # initialize users
-    for u in userList:
-        if u not in nm.keys():
-            h = {}
-            for i in range(7):
-                h[i] = 0
-            nm[u] = h
+    h = dict.fromkeys(range(7), 0)
+    nm = dict.fromkeys(userList, h)
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
             nm[msg.username][msg.time.weekday()] += 1
@@ -163,14 +139,8 @@ def getMessagesPerDOW(userList, msgList, mode):
 
 # returns a dictionary of the sum of all words per hour of day / user
 def getTotalWordsPerHour(userList, msgList):
-    nm = {}
-    # initialize users
-    for u in userList:
-        if u not in nm.keys():
-            h = {}
-            for i in range(24):
-                h[i] = 0
-            nm[u] = h
+    h = dict.fromkeys(range(24), 0)
+    nm = dict.fromkeys(userList, h)
     for msg in msgList:
         nm[msg.username][msg.time.hour] += len(msg.content.split())
 
@@ -221,14 +191,8 @@ def plotTotalWordsPerHour(userList, messageList, filename):
 
 # returns the sum of all words sorted by day of the week / user
 def getTotalWordsPerDOW(userList, msgList):
-    nm = {}
-    # initialize users
-    for u in userList:
-        if u not in nm.keys():
-            h = {}
-            for i in range(7):
-                h[i] = 0
-            nm[u] = h
+    h = dict.fromkeys(range(7), 0)
+    nm = dict.fromkeys(userList, h)
     for msg in msgList:
         nm[msg.username][msg.time.weekday()] += len(msg.content.split())
 
@@ -314,14 +278,9 @@ def getMonthTicks(msgList):
 
 
 def getTotalWordsPerDayPerUser(userList, msgList):
-    avl = {}
     daysLong = getDaysLong(msgList)
-    for u in userList:
-        if u not in avl.keys():
-            h = {}
-            for i in range(daysLong):
-                h[i] = 0
-            avl[u] = h
+    h = dict.fromkeys(range(daysLong), 0)
+    avl = dict.fromkeys(userList, h)
 
     dayCount = 0
     for i in range(len(msgList)-1):
@@ -347,11 +306,8 @@ def getDaysList(msgList):
 
 # returns a dictionary with the percentage of words by user
 def getWordPercentage(userList, msgList):
-    avl = {}
+    avl = dict.fromkeys(userList, 0)
     total = 0
-    for u in userList:
-        if u not in avl.keys():
-            avl[u] = 0
     for msg in msgList:
         avl[msg.username] += len(msg.content.split())
         total += len(msg.content.split())
@@ -455,7 +411,6 @@ def plotTotalWordsBar(userList, msgList, filename):
     ax.barh(ind, values, width, align="center")
     ax.set_title("Number of words per user\nDuration: " +
                  str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    print(users)
     ax.grid()
     ax.set_yticks(ind)
     ax.set_yticklabels(users)
@@ -472,7 +427,6 @@ def plotTotalWordsBar(userList, msgList, filename):
 def plotMessagesPerUser(userList, msgList, filename):
     daysLong = getDaysLong
     msgTotal = getMessagesPerUser(userList, msgList)
-    print(msgTotal)
     users = list(msgTotal.keys())
     values = list(msgTotal.values())
 
@@ -495,14 +449,29 @@ def plotMessagesPerUser(userList, msgList, filename):
     print("***********************")
 
 
+# returns the number of responses when response time is less than thresholdTime (minutes)
+def getTotalResponses(userList, msgList, thresholdTime):
+    #TODO:
+    return None
+
+
+# returns the average response time when time between messages is lower than 6 hours
+def getAverageResponseTime(userList, msgList):
+    #TODO:
+    return None
+        
+
+
 # main
 conversationFile = "juanma"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-plotAverageMessageLength(userList, msgList, conversationFile)
-plotMessagesPerUser(userList, msgList, conversationFile)
-plotTotalWordsBar(userList, msgList, conversationFile)
-plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotTotalWordsPerHour(userList, msgList, conversationFile)
+# plotAverageMessageLength(userList, msgList, conversationFile)
+# plotMessagesPerUser(userList, msgList, conversationFile)
+# plotTotalWordsBar(userList, msgList, conversationFile)
+# plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+# plotTotalWordsPerDOW(userList, msgList, conversationFile)
+# plotTotalWordsPerHour(userList, msgList, conversationFile)
+
+print(getTotalResponses(userList, msgList, 1))
