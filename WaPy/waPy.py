@@ -8,11 +8,10 @@ import operator
 import collections
 import numpy as np
 
+# FIXME:
+# remove dict fromkeys and use stackoverflow response
 
 # TODO:
-# emoji counter:
-# most repeated emoji
-# who sends the most emojis
 # responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
@@ -461,6 +460,7 @@ def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
     return avl
 
 
+# plots
 def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     daysLong = getDaysLong
     msgTotal = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
@@ -479,7 +479,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     ax.grid()
     ax.set_yticks(ind)
     ax.set_yticklabels(users)
-    
+
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "numberDoubleTexts.png"
@@ -488,8 +488,32 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     print("Generated: ", filename)
     print("***********************")
 
+
+def getResponseTime(userList, msgList):
+    avl = collections.defaultdict(lambda : collections.defaultdict(int))
+
+    for i in range(len(msgList)):
+        if msgList[i].username != msgList[i-1].username:
+            # response
+            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
+            if dif > 0 and dif <= 5:
+                avl[msgList[i].username][5] += 1
+            elif dif > 5 and dif <= 15:
+                avl[msgList[i].username][15] += 1
+            elif dif > 15 and dif <= 30:
+                avl[msgList[i].username][30] += 1
+            elif dif > 30 and dif <= 60:
+                avl[msgList[i].username][60] += 1
+            elif dif > 60 and dif <= 120:
+                avl[msgList[i].username][120] += 1
+            else:
+                avl[msgList[i].username]["inf"] += 1
+
+    return avl
+
+
 # main
-conversationFile = "juanma"
+conversationFile = "lau"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -499,5 +523,5 @@ userList = createUserList(msgList)
 # plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
 # plotTotalWordsPerDOW(userList, msgList, conversationFile)
 # plotTotalWordsPerHour(userList, msgList, conversationFile)
-
-plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
+# plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
+print(getResponseTime(userList, msgList))
