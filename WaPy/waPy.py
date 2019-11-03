@@ -13,6 +13,7 @@ import numpy as np
 # emoji counter:
 # most repeated emoji
 # who sends the most emojis
+# responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # timesDoubleTexted
@@ -400,7 +401,7 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
 
 
 def plotTotalWordsBar(userList, msgList, filename):
-    daysLong = getDaysLong
+    daysLong = getDaysLong(msgList)
     wordTotal = getTotalWords(userList, msgList)
     users = list(wordTotal.keys())
     values = list(wordTotal.values())
@@ -449,18 +450,43 @@ def plotMessagesPerUser(userList, msgList, filename):
     print("***********************")
 
 
-# returns the number of responses when response time is less than thresholdTime (minutes)
-def getTotalResponses(userList, msgList, thresholdTime):
-    #TODO:
-    return None
+# returns the times a user has double texted when x minutes have passed and x>lowerBound and x<upperBound
+def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
+    avl = dict.fromkeys(userList, 0)
+    for i in range(len(msgList)):
+        if msgList[i].username == msgList[i-1].username:
+            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
+            if dif >= lowerBound and dif <= upperBound:
+                avl[msgList[i].username] += 1
+    return avl
 
 
-# returns the average response time when time between messages is lower than 6 hours
-def getAverageResponseTime(userList, msgList):
-    #TODO:
-    return None
-        
+def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
+    daysLong = getDaysLong
+    msgTotal = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
+    users = list(msgTotal.keys())
+    values = list(msgTotal.values())
+    minHour = lowerBound/60
+    maxHour = upperBound/60
 
+    ind = np.arange(len(userList))
+    width = 0.35
+    fig, ax = plt.subplots()
+    ax.barh(ind, values, width, align="center")
+
+    ax.set_title("Number of double texts\nMore than " + str(minHour) + " hours and less than " + str(maxHour) + " hours\nDuration: " +
+                 str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+    ax.grid()
+    ax.set_yticks(ind)
+    ax.set_yticklabels(users)
+    
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "numberDoubleTexts.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
 
 # main
 conversationFile = "juanma"
@@ -474,4 +500,4 @@ userList = createUserList(msgList)
 # plotTotalWordsPerDOW(userList, msgList, conversationFile)
 # plotTotalWordsPerHour(userList, msgList, conversationFile)
 
-print(getTotalResponses(userList, msgList, 1))
+plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
