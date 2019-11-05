@@ -7,6 +7,7 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 import operator
 import collections
 import numpy as np
+import pandas as pd
 
 
 # TODO:
@@ -193,46 +194,6 @@ def getTotalWordsPerDOW(userList, msgList):
         nm[msg.username][msg.time.weekday()] += len(msg.content.split())
 
     return nm
-
-
-def plotTotalWordsPerDOW(userList, msgList, filename):
-    daysLong = getDaysLong(msgList)
-    if daysLong == 0:
-        daysLong = 1
-    userData = []
-    a = getTotalWordsPerDOW(userList, msgList)
-    for u in userList:
-        userData.append(dict(a[u]))
-
-    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
-    fig, ax = plt.subplots()
-    ind = np.arange(7)
-    width = 0.35
-    i = 0
-    for x in userData:
-        ax.bar(ind + (i*width), x.values(), width,
-               color=colors[i % len(colors)], label=userList[i])
-        i += 1
-
-    ax.set_title(
-        "Average number of words per day of week\nDuration: " + str(daysLong) + " days\n" + getFirstLastDateString(msgList))
-    ax.set_xticks(ind+width/2)
-    ax.set_xticklabels(["Monday", "Tuesday", "Wednesday",
-                        "Thursday", "Friday", "Saturday", "Sunday"])
-    plt.xlabel("Day of week")
-    plt.xticks(rotation=30)
-
-    ax.autoscale_view()
-    ax.legend()
-    plt.grid(True)
-
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "totalWordsPerDOW.png"
-    print("Generating ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
-    print("***********************")
 
 
 def plotAverageMessageLength(userList, msgList, filename):
@@ -503,8 +464,31 @@ def getResponseTime(userList, msgList):
     return avl
 
 
+def plotTotalWordsPerDOW(userList, msgList, filename):
+    raw = getTotalWordsPerDOW(userList, msgList)
+    df = pd.DataFrame(raw).sort_index()
+    df.rename(index={0: "Mon", 1: "Tue", 2: "Wed",
+                           3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
+    df.index.name = "Day of week"
+    print(df)
+    df.plot(kind="bar")
+    plt.xticks(rotation=45)
+
+    #save panda dataframe
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "totalWordsPerDOW.png"
+    print("Generating ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
+def getDOWList():
+    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
 # main
-conversationFile = "lau"
+conversationFile = "juanma"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -513,5 +497,6 @@ userList = createUserList(msgList)
 # plotTotalWordsBar(userList, msgList, conversationFile)
 # plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
 # plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotTotalWordsPerHour(userList, msgList, conversationFile)
-plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
+#FIXME: plotTotalWordsPerHour(userList, msgList, conversationFile)
+# plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
+test(userList, msgList, conversationFile)
