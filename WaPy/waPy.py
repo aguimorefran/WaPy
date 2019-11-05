@@ -90,6 +90,7 @@ def getNumberMessages(userList, msgList, mode):
 
 # messages per hour. mode = text / mode = media
 def getMessagesPerHour(userList, msgList, mode):
+    
     nm = collections.defaultdict(lambda: collections.defaultdict(int))
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
@@ -136,11 +137,16 @@ def getMessagesPerDOW(userList, msgList, mode):
 
 # returns a dictionary of the sum of all words per hour of day / user
 def getTotalWordsPerHour(userList, msgList):
-    nm = collections.defaultdict(lambda: collections.defaultdict(int))
+    nm = {}
+    for u in userList:
+        if u not in nm.keys():
+            h = {}
+            for i in range(0,24):
+                h[i] = 0
+            nm[u] = h
     for msg in msgList:
         nm[msg.username][msg.time.hour] += len(msg.content.split())
 
-    print(nm)
     return nm
 
 
@@ -150,38 +156,24 @@ def getFirstLastDateString(msgList):
 
 
 def plotTotalWordsPerHour(userList, messageList, filename):
-    daysLong = getDaysLong(msgList)
-    if daysLong == 0:
-        daysLong = 1
-    userData = []
-    a = getTotalWordsPerHour(userList, msgList)
-    for u in userList:
-        userData.append(dict(a[u]))
+    raw = getTotalWordsPerHour(userList, msgList)
+    print(raw)
+    df = pd.DataFrame(raw).sort_index()
+    df.index.name = "Hour"
+    plt.figure(figsize=(8,6))
+    df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
+                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+    
+    plt.legend(loc="upper left")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
 
-    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
-    fig, ax = plt.subplots()
-    ind = np.arange(24)
-    width = 0.35
-    i = 0
-    for x in userData:
-        values = x.values()
-        ax.bar(ind + (i*width), values, width,
-               color=colors[i % len(colors)], label=userList[i])
-        i += 1
-
-    ax.set_title("Total number of words per hour\nDuration: " +
-                 str(daysLong) + " days\n" + getFirstLastDateString(msgList))
-    ax.set_xticks(ind+width/2)
-    ax.set_xticklabels([j for j in range(0, 24)])
-    plt.xlabel("Hour")
-    ax.autoscale_view()
-    ax.legend()
-    plt.grid(True)
-
+    # save panda dataframe
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "totalMessagesPerHour.png"
-    print("Generating ", filename)
+    filename = "plots/" + filename + "totalWordsPerHour.png"
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -219,7 +211,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "avgWordsPerMessage.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -325,7 +317,7 @@ def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "totalWordsPerDayPerUser.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -346,7 +338,7 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "TotalWordPercentage.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -370,7 +362,7 @@ def plotTotalWordsBar(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "TotalWordPerUser.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -395,7 +387,7 @@ def plotMessagesPerUser(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "TotalWordPerUser.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -435,7 +427,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "numberDoubleTexts.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
@@ -483,14 +475,14 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "totalWordsPerDOW.png"
-    print("Generating ", filename)
+    print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
 
 
 # main
-conversationFile = "clown"
+conversationFile = "juanma"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -498,6 +490,6 @@ userList = createUserList(msgList)
 # TODO:plotMessagesPerUser(userList, msgList, conversationFile)
 # TODO:plotTotalWordsBar(userList, msgList, conversationFile)
 # TODO:plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-plotTotalWordsPerDOW(userList, msgList, conversationFile)
-# plotTotalWordsPerHour(userList, msgList, conversationFile)
+# plotTotalWordsPerDOW(userList, msgList, conversationFile)
+plotTotalWordsPerHour(userList, msgList, conversationFile)
 # TODO:plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
