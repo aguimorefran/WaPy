@@ -60,7 +60,7 @@ def readFromFile(filepath):
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
         while line:
-            if len(line) > 0 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
+            if len(line) > 0 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
                 # print(line)
                 msg = parseMsg(line)
@@ -468,13 +468,18 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     raw = getTotalWordsPerDOW(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
     df.rename(index={0: "Mon", 1: "Tue", 2: "Wed",
-                           3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
+                     3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
     df.index.name = "Day of week"
-    print(df)
-    df.plot(kind="bar")
+    plt.figure(figsize=(8,6))
+    df.plot(kind="bar", title="Total number of words per day of week\nDuration: " +
+                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+    
+    plt.legend(loc="upper left")
     plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
 
-    #save panda dataframe
+    # save panda dataframe
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "totalWordsPerDOW.png"
@@ -483,20 +488,16 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     print("Generated: ", filename)
     print("***********************")
 
-def getDOWList():
-    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
 
 # main
-conversationFile = "juanma"
+conversationFile = "clown"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-# plotAverageMessageLength(userList, msgList, conversationFile)
-# plotMessagesPerUser(userList, msgList, conversationFile)
-# plotTotalWordsBar(userList, msgList, conversationFile)
-# plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-# plotTotalWordsPerDOW(userList, msgList, conversationFile)
-#FIXME: plotTotalWordsPerHour(userList, msgList, conversationFile)
-# plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
-test(userList, msgList, conversationFile)
+# TODO:plotAverageMessageLength(userList, msgList, conversationFile)
+# TODO:plotMessagesPerUser(userList, msgList, conversationFile)
+# TODO:plotTotalWordsBar(userList, msgList, conversationFile)
+# TODO:plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+plotTotalWordsPerDOW(userList, msgList, conversationFile)
+# plotTotalWordsPerHour(userList, msgList, conversationFile)
+# TODO:plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
