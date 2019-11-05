@@ -160,9 +160,8 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     print(raw)
     df = pd.DataFrame(raw).sort_index()
     df.index.name = "Hour"
-    plt.figure(figsize=(8, 6))
     df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
-                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", width=0.35)
 
     plt.legend(loc="upper left")
     plt.xticks(rotation=45)
@@ -274,7 +273,6 @@ def getTotalWords(userList, msgList):
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     # FIXME: fix days
-    nMonts = len(getMonthTicks(msgList))
     daysLong = getDaysLong(msgList)
     daysList = getDaysList(msgList)
     dif = abs(daysLong - len(daysList))
@@ -411,7 +409,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
     df.plot(kind="bar", title="Number of double texts. " + str(minHour) + " <= t <= " + str(maxHour) + "\nDuration: " +
-                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
@@ -457,7 +455,7 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
                      3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
     df.index.name = "Day of week"
     df.plot(kind="bar", title="Total number of words per day of week\nDuration: " +
-                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
     plt.xticks(rotation=45)
@@ -475,14 +473,14 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
 
 # main
-conversationFile = "cataneros"
+conversationFile = "lau"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
 # TODO:plotAverageMessageLength(userList, msgList, conversationFile)
 # TODO:plotMessagesPerUser(userList, msgList, conversationFile)
 # TODO:plotTotalWordsBar(userList, msgList, conversationFile)
-# TODO:plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
 # plotTotalWordsPerDOW(userList, msgList, conversationFile)
 # plotTotalWordsPerHour(userList, msgList, conversationFile)
-plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
+# plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
