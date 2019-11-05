@@ -246,8 +246,8 @@ def getDaysList(msgList):
     i = 0
     dates.append(str(msgList[0].time.date()))
     for i in range(len(msgList)):
-        if (msgList[i-1].time.day < msgList[i].time.day):
-            dates.append(str(msgList[i].time.date()))
+        if (msgList[i-1].time.day != msgList[i].time.day):
+            dates.append(str(msgList[i].time))
     return dates
 
 
@@ -272,54 +272,8 @@ def getTotalWords(userList, msgList):
 
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
-    # FIXME: fix days
-    daysLong = getDaysLong(msgList)
-    daysList = getDaysList(msgList)
-    dif = abs(daysLong - len(daysList))
-
-    if daysLong == 0:
-        daysLong = 1
-    userData = []
-    a = getTotalWordsPerDayPerUser(userList, msgList)
-    for u in userList:
-        userData.append(dict(a[u]))
-    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
-    width = 0.35
-    ind = np.arange(len(daysList))
-    fig, ax = plt.subplots()
-
-    i = 0
-    for x in userData:
-        valores = list(x.values())
-        if len(daysList) > len(x.values()):
-            daysList = daysList[:len(daysList)-dif]
-        elif len(x.values()) > len(daysList):
-            valores = valores[:len(valores)-dif]
-        ax.bar(ind + (i*width), valores, width,
-               color=colors[i % len(colors)], label=userList[i])
-        i += 1
-    ax.set_title(
-        "Words per day\nDuration: " + str(len(daysList)) + " days\n" + getFirstLastDateString(msgList))
-    plt.xlabel("Day")
-    plt.ylabel("Words")
-
-    # ticks
-    nTicks = 10
-    indTick = np.arange(0, len(daysList), nTicks)
-    tickLabels = [daysList[i] for i in indTick]
-    ax.set_xticks(indTick)
-    ax.set_xticklabels(tickLabels)
-    plt.grid(True)
-    ax.legend()
-
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "totalWordsPerDayPerUser.png"
-    print("Generating: ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
-    print("***********************")
-
+    #TODO
+    return None
 
 def plotTotalWordPercentagePie(userList, msgList, filename):
     daysLong = getDaysLong(msgList)
@@ -415,7 +369,6 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
 
-    
     # save panda dataframe
     if not os.path.exists("plots"):
         os.mkdir("plots")
@@ -424,6 +377,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
+
 
 def getResponseTime(userList, msgList):
     avl = collections.defaultdict(lambda: collections.defaultdict(int))
