@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import os
 import string
 import matplotlib.pyplot as plt
@@ -11,10 +12,10 @@ import pandas as pd
 
 
 # TODO:
+# separete folder for every conversation
 # responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
-# timesDoubleTexted
 # messages and media per DOW, hour, month
 
 
@@ -226,16 +227,26 @@ def getMonthTicks(msgList):
 
 
 def getTotalWordsPerDayPerUser(userList, msgList):
-    daysLong = getDaysLong(msgList)
-    avl = collections.defaultdict(lambda: collections.defaultdict(int))
+    avl = {}
 
-    dayCount = 0
-    for i in range(len(msgList)-1):
-        if msgList[i+1].time.date() > msgList[i].time.date():
-            dayCount += 1
-        if dayCount != daysLong:
-            avl[msgList[i].username][dayCount] += len(
-                msgList[i].content.split())
+    # get a list of the datetimes of days from first to last message, including empty days with no messages
+    sdate = msgList[0].time.date()
+    edate = msgList[len(msgList)-1].time.date()
+    delta = edate-sdate
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for d in days:
+                h[d] = 0
+            avl[u] = h
+
+    for msg in msgList:
+        avl[msg.username][msg.time.date()] += len(msg.content.split())
 
     return avl
 
@@ -244,10 +255,10 @@ def getTotalWordsPerDayPerUser(userList, msgList):
 def getDaysList(msgList):
     dates = []
     i = 0
-    dates.append(str(msgList[0].time.date()))
+    dates.append(msgList[0].time.date())
     for i in range(len(msgList)):
         if (msgList[i-1].time.day != msgList[i].time.day):
-            dates.append(str(msgList[i].time))
+            dates.append(msgList[i].time.date())
     return dates
 
 
@@ -268,12 +279,34 @@ def getTotalWords(userList, msgList):
     avl = collections.defaultdict(int)
     for msg in msgList:
         avl[msg.username] += len(msg.content.split())
-    return dict(collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1))))
+    return collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1)))
 
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
+    raw = getTotalWordsPerDayPerUser(userList, msgList)    
+    
+    df = pd.DataFrame(raw).sort_index()
+    df.plot(title="Number of words\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    
+    #fit function
     #TODO
-    return None
+    
+    plt.xlabel("Date")
+    plt.ylabel("Number of words")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    
+    # save panda dataframe
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    filename = "plots/" + filename + "wordsPerDay.png"
+    print("Generating: ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
 
 def plotTotalWordPercentagePie(userList, msgList, filename):
     daysLong = getDaysLong(msgList)
@@ -356,13 +389,12 @@ def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
     return avl
 
 
-# plots
 def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     minHour = lowerBound/60
     maxHour = upperBound/60
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
-    df.plot(kind="bar", title="Number of double texts. " + str(minHour) + " <= t <= " + str(maxHour) + "\nDuration: " +
+    df.plot(kind="bar", title="Double texts. " + str(minHour) + "h <= t <= " + str(maxHour) + " h\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.xticks(rotation=45)
@@ -427,7 +459,7 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
 
 # main
-conversationFile = "lau"
+conversationFile = "cb"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -435,6 +467,6 @@ userList = createUserList(msgList)
 # TODO:plotMessagesPerUser(userList, msgList, conversationFile)
 # TODO:plotTotalWordsBar(userList, msgList, conversationFile)
 plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-# plotTotalWordsPerDOW(userList, msgList, conversationFile)
-# plotTotalWordsPerHour(userList, msgList, conversationFile)
-# plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
+plotTotalWordsPerDOW(userList, msgList, conversationFile)
+plotTotalWordsPerHour(userList, msgList, conversationFile)
+plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
