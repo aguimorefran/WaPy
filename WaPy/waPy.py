@@ -90,7 +90,7 @@ def getNumberMessages(userList, msgList, mode):
 
 # messages per hour. mode = text / mode = media
 def getMessagesPerHour(userList, msgList, mode):
-    
+
     nm = collections.defaultdict(lambda: collections.defaultdict(int))
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
@@ -141,7 +141,7 @@ def getTotalWordsPerHour(userList, msgList):
     for u in userList:
         if u not in nm.keys():
             h = {}
-            for i in range(0,24):
+            for i in range(0, 24):
                 h[i] = 0
             nm[u] = h
     for msg in msgList:
@@ -160,10 +160,10 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     print(raw)
     df = pd.DataFrame(raw).sort_index()
     df.index.name = "Hour"
-    plt.figure(figsize=(8,6))
+    plt.figure(figsize=(8, 6))
     df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
                  str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    
+
     plt.legend(loc="upper left")
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
@@ -406,32 +406,26 @@ def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
 
 # plots
 def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
-    daysLong = getDaysLong
-    msgTotal = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
-    users = list(msgTotal.keys())
-    values = list(msgTotal.values())
     minHour = lowerBound/60
     maxHour = upperBound/60
+    raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
+    df.plot(kind="bar", title="Number of double texts. " + str(minHour) + " <= t <= " + str(maxHour) + "\nDuration: " +
+                 str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
 
-    ind = np.arange(len(userList))
-    width = 0.35
-    fig, ax = plt.subplots()
-    ax.barh(ind, values, width, align="center")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
 
-    ax.set_title("Number of double texts\nMore than " + str(minHour) + " hours and less than " + str(maxHour) + " hours\nDuration: " +
-                 str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    ax.grid()
-    ax.set_yticks(ind)
-    ax.set_yticklabels(users)
-
+    
+    # save panda dataframe
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "numberDoubleTexts.png"
+    filename = "plots/" + filename + "timesDoubleText.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
-
 
 def getResponseTime(userList, msgList):
     avl = collections.defaultdict(lambda: collections.defaultdict(int))
@@ -462,10 +456,9 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     df.rename(index={0: "Mon", 1: "Tue", 2: "Wed",
                      3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
     df.index.name = "Day of week"
-    plt.figure(figsize=(8,6))
     df.plot(kind="bar", title="Total number of words per day of week\nDuration: " +
                  str(getDaysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    
+
     plt.legend(loc="upper left")
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
@@ -482,7 +475,7 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
 
 # main
-conversationFile = "juanma"
+conversationFile = "cataneros"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -491,5 +484,5 @@ userList = createUserList(msgList)
 # TODO:plotTotalWordsBar(userList, msgList, conversationFile)
 # TODO:plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
 # plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotTotalWordsPerHour(userList, msgList, conversationFile)
-# TODO:plotTimesDoubleTexted(userList, msgList, 360, 1440, conversationFile)
+# plotTotalWordsPerHour(userList, msgList, conversationFile)
+plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
