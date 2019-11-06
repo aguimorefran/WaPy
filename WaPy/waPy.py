@@ -158,16 +158,16 @@ def getFirstLastDateString(msgList):
 
 def plotTotalWordsPerHour(userList, messageList, filename):
     raw = getTotalWordsPerHour(userList, msgList)
-    print(raw)
     df = pd.DataFrame(raw).sort_index()
     df.index.name = "Hour"
     df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", width=0.35)
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
+    plt.ylabel("Words")
 
     # save panda dataframe
     if not os.path.exists("plots"):
@@ -189,28 +189,21 @@ def getTotalWordsPerDOW(userList, msgList):
 
 
 def plotAverageMessageLength(userList, msgList, filename):
-    daysLong = getDaysLong(msgList)
-    userData = []
-    a = getAvgMessageLength(userList, msgList)
-    for u in userList:
-        userData.append(a[u])
-    colors = ['b', 'r', 'g', 'c', 'm', 'y', 'k', ]
-    fix, ax = plt.subplots()
-    ind = np.arange(len(userList))
-    width = 0.35
+    raw = getAvgMessageLength(userList, msgList)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg len"])
+    df.index.name = "User"
+    df.plot(kind="bar", title="Average message length\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
-    ax.bar(ind, userData, width, color=colors)
-    ax.set_title("Average words per message\nDuration: " +
-                 str(daysLong) + " days\n" + getFirstLastDateString(msgList))
-    ax.set_xticks(ind)
-    ax.set_xticklabels([userList[j] for j in range(len(userList))])
-    plt.xlabel("User")
-    ax.autoscale_view()
-    plt.grid(True)
+    plt.legend(loc="upper left")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    plt.ylabel("Words per message")
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "avgWordsPerMessage.png"
+    filename = "plots/" + filename + "avgMessageLength.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -301,7 +294,7 @@ def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     # save panda dataframe
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "wordsPerDay.png"
+    filename = "plots/" + filename + "TotalwordsPerDay.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -349,24 +342,21 @@ def plotTotalWordsBar(userList, msgList, filename):
 
 
 def plotMessagesPerUser(userList, msgList, filename):
-    daysLong = getDaysLong
-    msgTotal = getMessagesPerUser(userList, msgList)
-    users = list(msgTotal.keys())
-    values = list(msgTotal.values())
+    raw = getMessagesPerUser(userList, msgList)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"])
 
-    ind = np.arange(len(userList))
-    width = 0.35
-    fig, ax = plt.subplots()
-    ax.barh(ind, values, width, align="center")
-    ax.set_title("Number of messages per user\nDuration: " +
-                 str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    ax.grid()
-    ax.set_yticks(ind)
-    ax.set_yticklabels(users)
+    df.plot(kind="bar", title="Number of messages.\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    plt.ylabel("Messages")
+    plt.xlabel("User")
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
-    filename = "plots/" + filename + "TotalWordPerUser.png"
+    filename = "plots/" + filename + "TotalmessagesPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -395,6 +385,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
+    plt.ylabel("Double text times")
 
     # save panda dataframe
     if not os.path.exists("plots"):
@@ -442,6 +433,7 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
+    plt.ylabel("Number of words")
 
     # save panda dataframe
     if not os.path.exists("plots"):
@@ -454,14 +446,14 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
 
 # main
-conversationFile = "cb"
+conversationFile = "lau"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
-# TODO:plotAverageMessageLength(userList, msgList, conversationFile)
-# TODO:plotMessagesPerUser(userList, msgList, conversationFile)
+plotAverageMessageLength(userList, msgList, conversationFile)
+plotMessagesPerUser(userList, msgList, conversationFile)
 plotTotalWordsBar(userList, msgList, conversationFile)
-#plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-#plotTotalWordsPerDOW(userList, msgList, conversationFile)
-#plotTotalWordsPerHour(userList, msgList, conversationFile)
-#plotTimesDoubleTexted(userList, msgList, 15, 1440, conversationFile)
+plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+plotTotalWordsPerDOW(userList, msgList, conversationFile)
+plotTotalWordsPerHour(userList, msgList, conversationFile)
+plotTimesDoubleTexted(userList, msgList, 15, 1440, conversationFile)
