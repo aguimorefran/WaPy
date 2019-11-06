@@ -169,10 +169,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     plt.grid(axis="y")
     plt.ylabel("Words")
 
-    # save panda dataframe
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "totalWordsPerHour.png"
+    filename = "plots/" + filename + "/totalWordsPerHour.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -201,9 +198,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     plt.grid(axis="y")
     plt.ylabel("Words per message")
 
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "avgMessageLength.png"
+    filename = "plots/" + filename + "/avgMessageLength.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -276,25 +271,22 @@ def getTotalWords(userList, msgList):
 
 
 def plotTotalWordsPerDayPerUser(userList, msgList, filename):
-    raw = getTotalWordsPerDayPerUser(userList, msgList)    
-    
+    raw = getTotalWordsPerDayPerUser(userList, msgList)
+
     df = pd.DataFrame(raw).sort_index()
     df.plot(title="Number of words\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
-    
-    #fit function
-    #TODO
-    
+            str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+
+    # fit function
+    # TODO
+
     plt.xlabel("Date")
     plt.ylabel("Number of words")
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
-    
-    # save panda dataframe
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "TotalwordsPerDay.png"
+
+    filename = "plots/" + filename + "/TotalwordsPerDay.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -330,11 +322,8 @@ def plotTotalWordsBar(userList, msgList, filename):
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
-    
 
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "TotalWordPerUser.png"
+    filename = "plots/" + filename + "/TotalWordPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -354,9 +343,7 @@ def plotMessagesPerUser(userList, msgList, filename):
     plt.ylabel("Messages")
     plt.xlabel("User")
 
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "TotalmessagesPerUser.png"
+    filename = "plots/" + filename + "/TotalmessagesPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -388,9 +375,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     plt.ylabel("Double text times")
 
     # save panda dataframe
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "timesDoubleText.png"
+    filename = "plots/" + filename + "/timesDoubleTexted.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -436,9 +421,8 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
     plt.ylabel("Number of words")
 
     # save panda dataframe
-    if not os.path.exists("plots"):
-        os.mkdir("plots")
-    filename = "plots/" + filename + "totalWordsPerDOW.png"
+
+    filename = "plots/" + filename + "/totalWordsPerDOW.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -446,10 +430,17 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
 
 # main
-conversationFile = "lau"
+conversationFile = "laura"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
+
+# plots
+if not os.path.exists("plots"):
+    os.mkdir("plots")
+if not os.path.exists("plots/" + conversationFile):
+    os.mkdir("plots/" + conversationFile)
+
 plotAverageMessageLength(userList, msgList, conversationFile)
 plotMessagesPerUser(userList, msgList, conversationFile)
 plotTotalWordsBar(userList, msgList, conversationFile)
