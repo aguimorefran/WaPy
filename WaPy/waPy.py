@@ -163,7 +163,6 @@ def plotWordsPerHour(userList, messageList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
-    plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
     plt.ylabel("Words")
@@ -192,7 +191,6 @@ def plotAverageMessageLength(userList, msgList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
-    plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
     plt.ylabel("Words per message")
@@ -272,7 +270,6 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
 
     plt.xlabel("Date")
     plt.ylabel("Number of words")
-    plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
 
@@ -363,6 +360,7 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
     plt.ylabel("Double text times")
+    plt.xlabel("User")
 
     # save panda dataframe
     filename = "plots/" + filename + "/DoubleTextTimes.png"
@@ -379,6 +377,7 @@ def getResponseTimePerMinutes(userList, msgList):
         if msgList[i].username != msgList[i-1].username:
             # response
             dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
+            avl[msgList[i].username][5] += 1
             if dif > 0 and dif <= 5:
                 avl[msgList[i].username][5] += 1
             elif dif > 5 and dif <= 15:
@@ -389,25 +388,34 @@ def getResponseTimePerMinutes(userList, msgList):
                 avl[msgList[i].username][60] += 1
             elif dif > 60 and dif <= 120:
                 avl[msgList[i].username][120] += 1
+            elif dif > 120 and dif <= 180:
+                avl[msgList[i].username][180] += 1
+            elif dif > 180 and dif <= 240:
+                avl[msgList[i].username][240] += 1
             else:
-                avl[msgList[i].username][121] += 1
+                avl[msgList[i].username][241] += 1
+
     return avl
 
 
-def plotResponseTimePerMinutes(userList, msgList):
+def plotResponseTimePerMinutes(userList, msgList, filename):
     raw = getResponseTimePerMinutes(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
     df.rename(index={5: "<=5", 15: "<=15", 30: "<=30",
-                     60: "<=60", 120: "<=120", 121: ">120"}, inplace=True)
+                     60: "<=60", 120: "<=120", 120: "<=120", 180: "<=180", 240: "<=240", 241: ">240"}, inplace=True)
     df.plot(title="Response time per time period\nDuration: " +
             str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
     plt.xlabel("Minutes")
     plt.ylabel("Number of responses")
     plt.legend(loc="upper left")
-    plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
-    plt.show()
+
+    filename = "plots/" + filename + "/ResponseTime.png"
+    print("Generating: ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
 
 
 def plotWordsPerDOW(userList, msgList, filename):
@@ -425,12 +433,6 @@ def plotWordsPerDOW(userList, msgList, filename):
     plt.ylabel("Number of words")
 
     # save panda dataframe
-
-    filename = "plots/" + filename + "/WordsPerDOW.png"
-    print("Generating: ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
-    print("***********************")
 
 
 # main
@@ -452,4 +454,4 @@ plotWordsPerDayPerUser(userList, msgList, conversationFile)
 plotWordsPerDOW(userList, msgList, conversationFile)
 plotWordsPerHour(userList, msgList, conversationFile)
 plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
-plotResponseTimePerMinutes(userList, msgList)
+plotResponseTimePerMinutes(userList, msgList, conversationFile)
