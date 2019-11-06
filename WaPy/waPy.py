@@ -12,7 +12,6 @@ import pandas as pd
 
 
 # TODO:
-# separete folder for every conversation
 # responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
@@ -137,7 +136,7 @@ def getMessagesPerDOW(userList, msgList, mode):
 
 
 # returns a dictionary of the sum of all words per hour of day / user
-def getTotalWordsPerHour(userList, msgList):
+def getWordsPerHour(userList, msgList):
     nm = {}
     for u in userList:
         if u not in nm.keys():
@@ -156,8 +155,8 @@ def getFirstLastDateString(msgList):
     return str(msgList[0].time.date()) + " - " + str(msgList[len(msgList)-1].time.date())
 
 
-def plotTotalWordsPerHour(userList, messageList, filename):
-    raw = getTotalWordsPerHour(userList, msgList)
+def plotWordsPerHour(userList, messageList, filename):
+    raw = getWordsPerHour(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
     df.index.name = "Hour"
     df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
@@ -169,7 +168,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
     plt.grid(axis="y")
     plt.ylabel("Words")
 
-    filename = "plots/" + filename + "/totalWordsPerHour.png"
+    filename = "plots/" + filename + "/WordsPerHour.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -177,7 +176,7 @@ def plotTotalWordsPerHour(userList, messageList, filename):
 
 
 # returns the sum of all words sorted by day of the week / user
-def getTotalWordsPerDOW(userList, msgList):
+def getWordsPerDOW(userList, msgList):
     nm = collections.defaultdict(lambda: collections.defaultdict(int))
     for msg in msgList:
         nm[msg.username][msg.time.weekday()] += len(msg.content.split())
@@ -205,16 +204,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     print("***********************")
 
 
-def getMonthTicks(msgList):
-    months = []
-    for msg in msgList:
-        m = str(msg.time.month) + "-" + str(msg.time.year)
-        if m not in months:
-            months.append(m)
-    return months
-
-
-def getTotalWordsPerDayPerUser(userList, msgList):
+def getWordsPerDayPerUser(userList, msgList):
     avl = {}
 
     # get a list of the datetimes of days from first to last message, including empty days with no messages
@@ -263,15 +253,15 @@ def getWordPercentage(userList, msgList):
 
 
 # returns a dictionary the total words said by each user
-def getTotalWords(userList, msgList):
+def getWordsPerUser(userList, msgList):
     avl = collections.defaultdict(int)
     for msg in msgList:
         avl[msg.username] += len(msg.content.split())
     return collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1)))
 
 
-def plotTotalWordsPerDayPerUser(userList, msgList, filename):
-    raw = getTotalWordsPerDayPerUser(userList, msgList)
+def plotWordsPerDayPerUser(userList, msgList, filename):
+    raw = getWordsPerDayPerUser(userList, msgList)
 
     df = pd.DataFrame(raw).sort_index()
     df.plot(title="Number of words\nDuration: " +
@@ -286,7 +276,7 @@ def plotTotalWordsPerDayPerUser(userList, msgList, filename):
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
 
-    filename = "plots/" + filename + "/TotalwordsPerDay.png"
+    filename = "plots/" + filename + "/WordsPerDayPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -314,8 +304,8 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
     print("***********************")
 
 
-def plotTotalWordsBar(userList, msgList, filename):
-    raw = getTotalWords(userList, msgList)
+def plotWordsPerUserBar(userList, msgList, filename):
+    raw = getWordsPerUser(userList, msgList)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
     df.plot(kind="bar", title="Total number of words\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
@@ -323,7 +313,7 @@ def plotTotalWordsBar(userList, msgList, filename):
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
 
-    filename = "plots/" + filename + "/TotalWordPerUser.png"
+    filename = "plots/" + filename + "/WordsPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -343,7 +333,7 @@ def plotMessagesPerUser(userList, msgList, filename):
     plt.ylabel("Messages")
     plt.xlabel("User")
 
-    filename = "plots/" + filename + "/TotalmessagesPerUser.png"
+    filename = "plots/" + filename + "/MessagesPerUser.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -361,7 +351,7 @@ def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
     return avl
 
 
-def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
+def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     minHour = lowerBound/60
     maxHour = upperBound/60
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
@@ -375,7 +365,7 @@ def plotTimesDoubleTexted(userList, msgList, lowerBound, upperBound, filename):
     plt.ylabel("Double text times")
 
     # save panda dataframe
-    filename = "plots/" + filename + "/timesDoubleTexted.png"
+    filename = "plots/" + filename + "/DoubleTextTimes.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
@@ -405,8 +395,8 @@ def getResponseTime(userList, msgList):
     return avl
 
 
-def plotTotalWordsPerDOW(userList, msgList, filename):
-    raw = getTotalWordsPerDOW(userList, msgList)
+def plotWordsPerDOW(userList, msgList, filename):
+    raw = getWordsPerDOW(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
     df.rename(index={0: "Mon", 1: "Tue", 2: "Wed",
                      3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}, inplace=True)
@@ -422,11 +412,15 @@ def plotTotalWordsPerDOW(userList, msgList, filename):
 
     # save panda dataframe
 
-    filename = "plots/" + filename + "/totalWordsPerDOW.png"
+    filename = "plots/" + filename + "/WordsPerDOW.png"
     print("Generating: ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated: ", filename)
     print("***********************")
+
+
+def getResponseTime(userList, msgList):
+    return None
 
 
 # main
@@ -443,8 +437,8 @@ if not os.path.exists("plots/" + conversationFile):
 
 plotAverageMessageLength(userList, msgList, conversationFile)
 plotMessagesPerUser(userList, msgList, conversationFile)
-plotTotalWordsBar(userList, msgList, conversationFile)
-plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotTotalWordsPerHour(userList, msgList, conversationFile)
-plotTimesDoubleTexted(userList, msgList, 15, 1440, conversationFile)
+plotWordsPerUserBar(userList, msgList, conversationFile)
+plotWordsPerDayPerUser(userList, msgList, conversationFile)
+plotWordsPerDOW(userList, msgList, conversationFile)
+plotWordsPerHour(userList, msgList, conversationFile)
+plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
