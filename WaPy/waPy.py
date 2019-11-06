@@ -330,19 +330,14 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
 
 
 def plotTotalWordsBar(userList, msgList, filename):
-    daysLong = getDaysLong(msgList)
-    wordTotal = getTotalWords(userList, msgList)
-    users = list(wordTotal.keys())
-    values = list(wordTotal.values())
-
-    ind = np.arange(len(userList))
-    width = 0.35
-    fig, ax = plt.subplots()
-    ax.barh(ind, values, width, align="center")
-    #ax.set_title("Number of words per user\nDuration: " + str(daysLong(msgList)) + " days\n" + getFirstLastDateString(msgList))
-    ax.grid()
-    ax.set_yticks(ind)
-    ax.set_yticklabels(users)
+    raw = getTotalWords(userList, msgList)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
+    df.plot(kind="bar", title="Total number of words\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    
 
     if not os.path.exists("plots"):
         os.mkdir("plots")
@@ -465,8 +460,8 @@ msgList = readFromFile(filename)
 userList = createUserList(msgList)
 # TODO:plotAverageMessageLength(userList, msgList, conversationFile)
 # TODO:plotMessagesPerUser(userList, msgList, conversationFile)
-# TODO:plotTotalWordsBar(userList, msgList, conversationFile)
-plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
-plotTotalWordsPerDOW(userList, msgList, conversationFile)
-plotTotalWordsPerHour(userList, msgList, conversationFile)
-plotTimesDoubleTexted(userList, msgList, 5, 1440, conversationFile)
+plotTotalWordsBar(userList, msgList, conversationFile)
+#plotTotalWordsPerDayPerUser(userList, msgList, conversationFile)
+#plotTotalWordsPerDOW(userList, msgList, conversationFile)
+#plotTotalWordsPerHour(userList, msgList, conversationFile)
+#plotTimesDoubleTexted(userList, msgList, 15, 1440, conversationFile)
