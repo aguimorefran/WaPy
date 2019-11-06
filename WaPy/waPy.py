@@ -372,7 +372,7 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     print("***********************")
 
 
-def getResponseTime(userList, msgList):
+def getResponseTimePerMinutes(userList, msgList):
     avl = collections.defaultdict(lambda: collections.defaultdict(int))
 
     for i in range(len(msgList)):
@@ -390,9 +390,24 @@ def getResponseTime(userList, msgList):
             elif dif > 60 and dif <= 120:
                 avl[msgList[i].username][120] += 1
             else:
-                avl[msgList[i].username]["inf"] += 1
-
+                avl[msgList[i].username][121] += 1
     return avl
+
+
+def plotResponseTimePerMinutes(userList, msgList):
+    raw = getResponseTimePerMinutes(userList, msgList)
+    df = pd.DataFrame(raw).sort_index()
+    df.rename(index={5: "<=5", 15: "<=15", 30: "<=30",
+                     60: "<=60", 120: "<=120", 121: ">120"}, inplace=True)
+    df.plot(title="Response time per time period\nDuration: " +
+            str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    plt.xlabel("Minutes")
+    plt.ylabel("Number of responses")
+    plt.legend(loc="upper left")
+    plt.xticks(rotation=45)
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    plt.show()
 
 
 def plotWordsPerDOW(userList, msgList, filename):
@@ -405,7 +420,6 @@ def plotWordsPerDOW(userList, msgList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
-    plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
     plt.ylabel("Number of words")
@@ -419,12 +433,8 @@ def plotWordsPerDOW(userList, msgList, filename):
     print("***********************")
 
 
-def getResponseTime(userList, msgList):
-    return None
-
-
 # main
-conversationFile = "laura"
+conversationFile = "juanma"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
@@ -442,3 +452,4 @@ plotWordsPerDayPerUser(userList, msgList, conversationFile)
 plotWordsPerDOW(userList, msgList, conversationFile)
 plotWordsPerHour(userList, msgList, conversationFile)
 plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
+plotResponseTimePerMinutes(userList, msgList)
