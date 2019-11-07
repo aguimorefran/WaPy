@@ -9,13 +9,14 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
+from classifier import *
 
 
 # TODO:
 # responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
-# messages and media per DOW, hour, month
+# ajuste lineal
 
 
 class Message:
@@ -38,8 +39,8 @@ def parseMsg(input):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
-
-    line = deEmojify(input.rstrip())
+    
+    line = input.rstrip()
     day = int(line[0:2])
     month = int(line[3:5])
     year = int(line[6:10])
@@ -53,8 +54,9 @@ def parseMsg(input):
         isMedia = True
     return Message(user, line, content, isMedia, time)
 
-
 #   read conversation file and create a list with its parsed msgs
+
+
 def readFromFile(filepath):
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -188,9 +190,8 @@ def plotAverageMessageLength(userList, msgList, filename):
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg len"])
     df.index.name = "User"
     df.plot(kind="bar", title="Average message length\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
-    plt.legend(loc="upper left")
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
     plt.ylabel("Words per message")
@@ -272,6 +273,7 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     plt.ylabel("Number of words")
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
+    plt.xticks(rotation=45)
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
     print("Generating: ", filename)
@@ -305,7 +307,7 @@ def plotWordsPerUserBar(userList, msgList, filename):
     raw = getWordsPerUser(userList, msgList)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
     df.plot(kind="bar", title="Total number of words\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
     plt.grid(axis="y")
@@ -322,7 +324,7 @@ def plotMessagesPerUser(userList, msgList, filename):
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"])
 
     df.plot(kind="bar", title="Number of messages.\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
@@ -354,7 +356,7 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
     df.plot(kind="bar", title="Double texts. " + str(minHour) + "h <= t <= " + str(maxHour) + " h\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
     plt.xticks(rotation=45)
     plt.rc("grid", linestyle="--", color="black")
@@ -433,10 +435,14 @@ def plotWordsPerDOW(userList, msgList, filename):
     plt.ylabel("Number of words")
 
     # save panda dataframe
-
+    filename = "plots/" + filename + "/WordsPerDow.png"
+    print("Generating: ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
 
 # main
-conversationFile = "juanma"
+conversationFile = "cb"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
 userList = createUserList(msgList)
