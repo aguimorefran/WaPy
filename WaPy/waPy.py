@@ -21,12 +21,13 @@ from classifier import *
 
 class Message:
 
-    def __init__(self, username, line, content, isMedia, time):
+    def __init__(self, username, line, content, isMedia, time, pos):
         self.line = line
         self.username = username
         self.content = content
         self.isMedia = isMedia
         self.time = time
+        self.pos = pos
 
 
 # removes emojis
@@ -35,29 +36,31 @@ def deEmojify(inputString):
 
 
 #   Parses a line of message into its different fields
-def parseMsg(input):
+def parseMsg(input, clf):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
-    
+
     line = input.rstrip()
     day = int(line[0:2])
     month = int(line[3:5])
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = line[20:].split(':')[1]
+    content = line[20:].split(':')[1].rstrip().lstrip()
     user = line[20:].split(':')[0]
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
     if content.find("Media omitted"):
         isMedia = True
-    return Message(user, line, content, isMedia, time)
+    pos = clf.predict(content)
+    return Message(user, line, content, isMedia, time, pos)
 
 #   read conversation file and create a list with its parsed msgs
 
 
 def readFromFile(filepath):
+    clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
@@ -65,7 +68,7 @@ def readFromFile(filepath):
             if len(line) > 0 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
                 # print(line)
-                msg = parseMsg(line)
+                msg = parseMsg(line, clf)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -92,7 +95,6 @@ def getNumberMessages(userList, msgList, mode):
 
 # messages per hour. mode = text / mode = media
 def getMessagesPerHour(userList, msgList, mode):
-
     nm = collections.defaultdict(lambda: collections.defaultdict(int))
     for msg in msgList:
         if (mode == "text" and msg.content.find("<Media omitted>") == -1) or (mode == "media" and msg.content.find("<Media omitted>") != -1):
@@ -106,7 +108,11 @@ def getAvgMessageLength(userList, msgList):
     avl = collections.defaultdict(int)
     msgPerUser = getMessagesPerUser(userList, msgList)
     for m in msgList:
-        avl[m.username] += len(m.content.split())
+        # sets a limit of 100 words, just in case it is a pasted long text
+        if len(m.content.split()) >= 100:
+            avl[m.username] += 100
+        else:
+            avl[m.username] += len(m.content.split())
     for k in avl.keys():
         avl[k] = round(avl[k] / msgPerUser[k], 2)
     return avl
@@ -259,6 +265,7 @@ def getWordsPerUser(userList, msgList):
     return collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1)))
 
 
+# plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
     raw = getWordsPerDayPerUser(userList, msgList)
 
@@ -282,6 +289,7 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     print("***********************")
 
 
+# plots the total number of words per user in pie format
 def plotTotalWordPercentagePie(userList, msgList, filename):
     daysLong = getDaysLong(msgList)
     percentageList = getWordPercentage(userList, msgList)
@@ -303,6 +311,7 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
     print("***********************")
 
 
+# plots the total number of words per user in bar format
 def plotWordsPerUserBar(userList, msgList, filename):
     raw = getWordsPerUser(userList, msgList)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
@@ -319,6 +328,7 @@ def plotWordsPerUserBar(userList, msgList, filename):
     print("***********************")
 
 
+# plots the total number of messages a user has sent
 def plotMessagesPerUser(userList, msgList, filename):
     raw = getMessagesPerUser(userList, msgList)
     df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"])
@@ -350,6 +360,7 @@ def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
     return avl
 
 
+# plots the times a user has double texted
 def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     minHour = lowerBound/60
     maxHour = upperBound/60
@@ -372,6 +383,8 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     print("***********************")
 
 
+# returns the response time per minutes per user
+# FIXME: en vez de clasificarlos por tramos, hacerlos por minutos totales
 def getResponseTimePerMinutes(userList, msgList):
     avl = collections.defaultdict(lambda: collections.defaultdict(int))
 
@@ -400,6 +413,7 @@ def getResponseTimePerMinutes(userList, msgList):
     return avl
 
 
+# plots the response time of every user
 def plotResponseTimePerMinutes(userList, msgList, filename):
     raw = getResponseTimePerMinutes(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
@@ -420,6 +434,7 @@ def plotResponseTimePerMinutes(userList, msgList, filename):
     print("***********************")
 
 
+# plots the total number of words per DOW per user
 def plotWordsPerDOW(userList, msgList, filename):
     raw = getWordsPerDOW(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
@@ -441,7 +456,37 @@ def plotWordsPerDOW(userList, msgList, filename):
     print("Generated: ", filename)
     print("***********************")
 
+
+def getAvgPositivism(userList, msgList):
+    avl = collections.defaultdict(float)
+    nMessages = getNumberMessages(userList, msgList, "text")
+    for msg in msgList:
+        avl[msg.username] += msg.pos
+    for k in avl.keys():
+        avl[k] /= nMessages[k]
+    return avl
+
+
+def plotAvgPositivism(userList, msgList, filename):
+    raw = getAvgPositivism(userList, msgList)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg positivism"])
+    df.plot(kind="bar", title="Average positivism per user (0-1).\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
+    plt.rc("grid", linestyle="--", color="black")
+
+    plt.grid(axis="y")
+    plt.ylabel("Positivism")
+    plt.xlabel("User")
+
+    print("***********************")
+    filename = "plots/" + filename + "/AvgPositivism.png"
+    print("Generating: ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
 # main
+start_time = datetime.datetime.now()
 conversationFile = "cb"
 filename = "WaPy/" + conversationFile + ".txt"
 msgList = readFromFile(filename)
@@ -453,11 +498,19 @@ if not os.path.exists("plots"):
 if not os.path.exists("plots/" + conversationFile):
     os.mkdir("plots/" + conversationFile)
 
-plotAverageMessageLength(userList, msgList, conversationFile)
-plotMessagesPerUser(userList, msgList, conversationFile)
-plotWordsPerUserBar(userList, msgList, conversationFile)
-plotWordsPerDayPerUser(userList, msgList, conversationFile)
-plotWordsPerDOW(userList, msgList, conversationFile)
-plotWordsPerHour(userList, msgList, conversationFile)
-plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
-plotResponseTimePerMinutes(userList, msgList, conversationFile)
+# normal plotting part
+# plotAverageMessageLength(userList, msgList, conversationFile)
+# plotMessagesPerUser(userList, msgList, conversationFile)
+# plotWordsPerUserBar(userList, msgList, conversationFile)
+# plotWordsPerDayPerUser(userList, msgList, conversationFile)
+# plotWordsPerDOW(userList, msgList, conversationFile)
+# plotWordsPerHour(userList, msgList, conversationFile)
+# plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
+# plotResponseTimePerMinutes(userList, msgList, conversationFile)
+
+# positivism plotting part
+plotAvgPositivism(userList, msgList, conversationFile)
+
+
+print("\n\n------- ELAPSED TIME: %s seconds -------" %
+      round((datetime.datetime.now() - start_time).total_seconds(), 2))
