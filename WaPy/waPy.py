@@ -60,6 +60,8 @@ def parseMsg(input, clf):
 
 
 def readFromFile(filepath):
+    print("***********************")
+    print("Reading from file and parsing...")
     clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -72,6 +74,7 @@ def readFromFile(filepath):
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
+    print("***********************")
     return msgList
 
 
@@ -469,7 +472,8 @@ def getAvgPositivism(userList, msgList):
 
 def plotAvgPositivism(userList, msgList, filename):
     raw = getAvgPositivism(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg positivism"])
+    df = pd.DataFrame(raw.values(), index=raw.keys(),
+                      columns=["Avg positivism"])
     df.plot(kind="bar", title="Average positivism per user (0-1).\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
     plt.rc("grid", linestyle="--", color="black")
@@ -485,7 +489,92 @@ def plotAvgPositivism(userList, msgList, filename):
     print("Generated: ", filename)
     print("***********************")
 
-# main
+
+def getMessagesPerDay(userList, msgList):
+    avl = {}
+
+    # get a list of the datetimes of days from first to last message, including empty days with no messages
+    sdate = msgList[0].time.date()
+    edate = msgList[len(msgList)-1].time.date()
+    delta = edate-sdate
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for d in days:
+                h[d] = 0
+            avl[u] = h
+
+    for msg in msgList:
+        avl[msg.username][msg.time.date()] += 1
+
+    return avl
+
+
+def getPositivismPerDay(userList, msgList):
+    avl = {}
+    msgCount = getMessagesPerDay(userList, msgList)
+
+    # get a list of the datetimes of days from first to last message, including empty days with no messages
+    sdate = msgList[0].time.date()
+    edate = msgList[len(msgList)-1].time.date()
+    delta = edate-sdate
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for d in days:
+                h[d] = 0
+            avl[u] = h
+
+    for msg in msgList:
+        avl[msg.username][msg.time.date()] += msg.pos
+
+    for u in avl.keys():
+        for d in avl[u].keys():
+            try:
+                avl[u][d] /= msgCount[u][d]
+            except ZeroDivisionError:
+                avl[u][d] = None
+
+    return avl
+
+
+def plotPositivismPerDay(userList, msgList, filename):
+    raw = getPositivismPerDay(userList, msgList)
+
+    df = pd.DataFrame(raw).sort_index()
+    #FIXME: df = df.rolling(2).mean()
+    df.plot(title="Positivism per day (0-1)\nDuration: " +
+            str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    
+    #moving averages
+
+    # TODO
+
+    plt.xlabel("Date")
+    plt.ylabel("Positivism")
+    plt.rc("grid", linestyle="--", color="black")
+    plt.grid(axis="y")
+    plt.xticks(rotation=45)
+
+    print("***********************")
+    filename = "plots/" + filename + "/PositivismPerDay.png"
+    print("Generating: ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated: ", filename)
+    print("***********************")
+
+
+# -------------------------------------------- main --------------------------------------------
 start_time = datetime.datetime.now()
 conversationFile = "cb"
 filename = "WaPy/" + conversationFile + ".txt"
@@ -498,7 +587,7 @@ if not os.path.exists("plots"):
 if not os.path.exists("plots/" + conversationFile):
     os.mkdir("plots/" + conversationFile)
 
-# normal plotting part
+# ---------------------- normal plotting part ----------------------
 # plotAverageMessageLength(userList, msgList, conversationFile)
 # plotMessagesPerUser(userList, msgList, conversationFile)
 # plotWordsPerUserBar(userList, msgList, conversationFile)
@@ -508,9 +597,10 @@ if not os.path.exists("plots/" + conversationFile):
 # plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
 # plotResponseTimePerMinutes(userList, msgList, conversationFile)
 
-# positivism plotting part
+# --------------------- positivism plotting part ----------------------
 plotAvgPositivism(userList, msgList, conversationFile)
+plotPositivismPerDay(userList, msgList, conversationFile)
 
 
-print("\n\n------- ELAPSED TIME: %s seconds -------" %
-      round((datetime.datetime.now() - start_time).total_seconds(), 2))
+print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
+                                                                    start_time).total_seconds()/60), (datetime.datetime.now()-start_time).total_seconds()%60))
