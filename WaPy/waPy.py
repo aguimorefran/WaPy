@@ -181,9 +181,9 @@ def plotWordsPerHour(userList, msgList, filename):
     plt.ylabel("Words")
 
     filename = "plots/" + filename + "/WordsPerHour.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -198,7 +198,7 @@ def getWordsPerDOW(userList, msgList):
 
 def plotAverageMessageLength(userList, msgList, filename):
     raw = getAvgMessageLength(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg len"])
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg len"]).sort_values(by="Avg len")
     df.index.name = "User"
     df.plot(kind="bar", title="Average message length\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
@@ -208,9 +208,9 @@ def plotAverageMessageLength(userList, msgList, filename):
     plt.ylabel("Words per message")
 
     filename = "plots/" + filename + "/avgMessageLength.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -271,7 +271,8 @@ def getWordsPerUser(userList, msgList):
 
 
 # plots a the words per day of conversation, from start to finish
-def plotWordsPerDayPerUser(userList, msgList, msaWindow, filename):
+def plotWordsPerDayPerUser(userList, msgList, filename):
+    msaWindow1 = round(getDaysLong(msgList)*0.2)
     raw = getWordsPerDayPerUser(userList, msgList)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
     ax1.set_title("Original data")
@@ -279,17 +280,17 @@ def plotWordsPerDayPerUser(userList, msgList, msaWindow, filename):
     ax1.grid(axis="y")
     df.plot(ax=ax1)
 
-    fig.suptitle("Words per day\nDuration: " +
+    fig.suptitle("Words per day of conversation\nDuration: " +
               str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
     
-    ax2.set_title("Rolling " + str(msaWindow) + "-day mean")
+    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
     ax2.grid(axis="y")
-    df.rolling(msaWindow).mean().plot(ax=ax2)
+    df.rolling(msaWindow1).mean().plot(ax=ax2)
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -309,9 +310,9 @@ def plotTotalWordPercentagePie(userList, msgList, filename):
     if not os.path.exists("plots"):
         os.mkdir("plots")
     filename = "plots/" + filename + "TotalWordPercentage.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -326,16 +327,16 @@ def plotWordsPerUserBar(userList, msgList, filename):
     plt.grid(axis="y")
 
     filename = "plots/" + filename + "/WordsPerUser.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
 # plots the total number of messages a user has sent
 def plotMessagesPerUser(userList, msgList, filename):
     raw = getMessagesPerUser(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"])
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"]).sort_values(by="Messages")
 
     df.plot(kind="bar", title="Number of messages.\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
@@ -347,9 +348,9 @@ def plotMessagesPerUser(userList, msgList, filename):
     plt.xlabel("User")
 
     filename = "plots/" + filename + "/MessagesPerUser.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -369,7 +370,7 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     minHour = lowerBound/60
     maxHour = upperBound/60
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"])
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"]).sort_values(by="Times")
     df.plot(kind="bar", title="Double texts. " + str(minHour) + "h <= t <= " + str(maxHour) + " h\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
@@ -381,14 +382,13 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
 
     # save panda dataframe
     filename = "plots/" + filename + "/DoubleTextTimes.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
 # returns the response time per minutes per user
-# FIXME: en vez de clasificarlos por tramos, hacerlos por minutos totales
 def getResponseTimePerMinutes(userList, msgList):
     avl = collections.defaultdict(lambda: collections.defaultdict(int))
 
@@ -432,9 +432,9 @@ def plotResponseTimePerMinutes(userList, msgList, filename):
     plt.grid(axis="y")
 
     filename = "plots/" + filename + "/ResponseTime.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -455,9 +455,9 @@ def plotWordsPerDOW(userList, msgList, filename):
 
     # save panda dataframe
     filename = "plots/" + filename + "/WordsPerDow.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -485,9 +485,9 @@ def plotAvgPositivism(userList, msgList, filename):
 
     print("***********************")
     filename = "plots/" + filename + "/AvgPositivism.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
@@ -549,8 +549,12 @@ def getPositivismPerDay(userList, msgList):
     return avl
 
 
-def plotPositivismPerDay(userList, msgList, msaWindow, filename):
+
+# plots the positivism per day of conversation and the moving mean
+# msaWindow (int > 0) = the size of the mean window
+def plotPositivismPerDay(userList, msgList, filename):
     raw = getPositivismPerDay(userList, msgList)
+    msaWindow1 = round(getDaysLong(msgList)*0.2)
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     ax1.set_title("Original data")
@@ -560,25 +564,28 @@ def plotPositivismPerDay(userList, msgList, msaWindow, filename):
     ax1.grid(axis="y")
 
     df.plot(ax=ax1)
-    fig.suptitle("Positivism per day\nDuration: " +
+    fig.suptitle("Positivism per day of conversation\nDuration: " +
               str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
-    ax2.set_title("Rolling " + str(msaWindow) + "-day mean")
+    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
     ax2.grid(axis="y")
 
-    df.rolling(msaWindow).mean().plot(ax=ax2)
+    df.rolling(msaWindow1).mean().plot(ax=ax2)
 
 
     print("***********************")
     filename = "plots/" + filename + "/PositivismPerDay.png"
-    print("Generating: ", filename)
+    print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
-    print("Generated: ", filename)
+    print("Generated:\t ", filename)
     print("***********************")
 
 
 
 # -------------------------------------------- main --------------------------------------------
+# convName = the name of the conversation, without .txt
+# plotting (Boolean) = True for plotting the normal charts
+# posPlotting (Boolean) = True for plotting the positiviness charts
 def main(convName, plotting, posPlotting):
     print("\n\n------------------------ WAPY 1.0 -------------------------- ")
     if plotting:
@@ -597,6 +604,7 @@ def main(convName, plotting, posPlotting):
     filename = "WaPy/" + conversationFile + ".txt"
     msgList = readFromFile(filename, posPlotting)
     userList = createUserList(msgList)
+
     print("***********************")
 
     # plots
@@ -610,7 +618,7 @@ def main(convName, plotting, posPlotting):
         plotAverageMessageLength(userList, msgList, conversationFile)
         plotMessagesPerUser(userList, msgList, conversationFile)
         plotWordsPerUserBar(userList, msgList, conversationFile)
-        plotWordsPerDayPerUser(userList, msgList, 5, conversationFile)
+        plotWordsPerDayPerUser(userList, msgList, conversationFile)
         plotWordsPerDOW(userList, msgList, conversationFile)
         plotWordsPerHour(userList, msgList, conversationFile)
         plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
@@ -619,10 +627,11 @@ def main(convName, plotting, posPlotting):
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         plotAvgPositivism(userList, msgList, conversationFile)
-        plotPositivismPerDay(userList, msgList, 3, conversationFile)
+        plotPositivismPerDay(userList, msgList, conversationFile)
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("lau", True, False)
+
+main("cb", True, False)
