@@ -13,7 +13,6 @@ from classifier import *
 
 
 # TODO:
-# responseTime
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # ajuste lineal
@@ -53,13 +52,16 @@ def parseMsg(input, clf):
     isMedia = False
     if content.find("Media omitted"):
         isMedia = True
-    pos = clf.predict(content)
+    if clf != None:
+        pos = clf.predict(content)
+    else:
+        pos = 0
     return Message(user, line, content, isMedia, time, pos)
 
 #   read conversation file and create a list with its parsed msgs
 
 
-def readFromFile(filepath):
+def readFromFile(filepath, posPlotting):
     clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -68,7 +70,10 @@ def readFromFile(filepath):
             if len(line) > 0 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
                 # print(line)
-                msg = parseMsg(line, clf)
+                if posPlotting:
+                    msg = parseMsg(line, clf)
+                else:
+                    msg = parseMsg(line, None)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -573,16 +578,25 @@ def plotPositivismPerDay(userList, msgList, msaWindow, filename):
     print("***********************")
 
 
+
 # -------------------------------------------- main --------------------------------------------
 def main(convName, plotting, posPlotting):
     print("\n\n------------------------ WAPY 1.0 -------------------------- ")
+    if plotting:
+        print("Normal plotting ENABLED")
+    else:
+        print("Normal plotting DISABLED")
+    if posPlotting:
+        print("Positivism plotting ENABLED")
+    else:
+        print("Positivism plotting DISABLED")
     start_time = datetime.datetime.now()
     print("Program starting at: %s" % start_time.time())
     print("***********************")
     print("Reading from file and parsing...")
     conversationFile = convName
     filename = "WaPy/" + conversationFile + ".txt"
-    msgList = readFromFile(filename)
+    msgList = readFromFile(filename, posPlotting)
     userList = createUserList(msgList)
     print("***********************")
 
@@ -612,4 +626,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cb", False, True)
+main("cb", True, False)
