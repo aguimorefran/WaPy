@@ -271,21 +271,20 @@ def getWordsPerUser(userList, msgList):
 
 
 # plots a the words per day of conversation, from start to finish
-def plotWordsPerDayPerUser(userList, msgList, filename):
+def plotWordsPerDayPerUser(userList, msgList, msaWindow, filename):
     raw = getWordsPerDayPerUser(userList, msgList)
-
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
+    ax1.set_title("Original data")
     df = pd.DataFrame(raw).sort_index()
-    df.plot(title="Number of words\nDuration: " +
-            str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    ax1.grid(axis="y")
+    df.plot(ax=ax1)
 
-    # fit function
-    # TODO
-
-    plt.xlabel("Date")
-    plt.ylabel("Number of words")
-    plt.rc("grid", linestyle="--")
-    plt.grid(axis="y")
-    plt.xticks(rotation=45)
+    fig.suptitle("Words per day\nDuration: " +
+              str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+    
+    ax2.set_title("Rolling " + str(msaWindow) + "-day mean")
+    ax2.grid(axis="y")
+    df.rolling(msaWindow).mean().plot(ax=ax2)
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
     print("Generating: ", filename)
@@ -611,7 +610,7 @@ def main(convName, plotting, posPlotting):
         plotAverageMessageLength(userList, msgList, conversationFile)
         plotMessagesPerUser(userList, msgList, conversationFile)
         plotWordsPerUserBar(userList, msgList, conversationFile)
-        plotWordsPerDayPerUser(userList, msgList, conversationFile)
+        plotWordsPerDayPerUser(userList, msgList, 5, conversationFile)
         plotWordsPerDOW(userList, msgList, conversationFile)
         plotWordsPerHour(userList, msgList, conversationFile)
         plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
@@ -626,4 +625,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cb", True, False)
+main("lau", True, False)
