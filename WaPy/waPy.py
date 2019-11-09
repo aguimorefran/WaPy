@@ -60,8 +60,6 @@ def parseMsg(input, clf):
 
 
 def readFromFile(filepath):
-    print("***********************")
-    print("Reading from file and parsing...")
     clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -74,7 +72,6 @@ def readFromFile(filepath):
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
-    print("***********************")
     return msgList
 
 
@@ -166,7 +163,7 @@ def getFirstLastDateString(msgList):
     return str(msgList[0].time.date()) + " - " + str(msgList[len(msgList)-1].time.date())
 
 
-def plotWordsPerHour(userList, messageList, filename):
+def plotWordsPerHour(userList, msgList, filename):
     raw = getWordsPerHour(userList, msgList)
     df = pd.DataFrame(raw).sort_index()
     df.index.name = "Hour"
@@ -174,7 +171,7 @@ def plotWordsPerHour(userList, messageList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.ylabel("Words")
 
@@ -201,7 +198,7 @@ def plotAverageMessageLength(userList, msgList, filename):
     df.plot(kind="bar", title="Average message length\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.ylabel("Words per message")
 
@@ -281,7 +278,7 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
 
     plt.xlabel("Date")
     plt.ylabel("Number of words")
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.xticks(rotation=45)
 
@@ -321,7 +318,7 @@ def plotWordsPerUserBar(userList, msgList, filename):
     df.plot(kind="bar", title="Total number of words\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
     plt.xticks(rotation=45)
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
 
     filename = "plots/" + filename + "/WordsPerUser.png"
@@ -340,7 +337,7 @@ def plotMessagesPerUser(userList, msgList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
     plt.xticks(rotation=45)
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.ylabel("Messages")
     plt.xlabel("User")
@@ -373,7 +370,7 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
     plt.xticks(rotation=45)
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.ylabel("Double text times")
     plt.xlabel("User")
@@ -427,7 +424,7 @@ def plotResponseTimePerMinutes(userList, msgList, filename):
     plt.xlabel("Minutes")
     plt.ylabel("Number of responses")
     plt.legend(loc="upper left")
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
 
     filename = "plots/" + filename + "/ResponseTime.png"
@@ -448,7 +445,7 @@ def plotWordsPerDOW(userList, msgList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     plt.legend(loc="upper left")
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
     plt.grid(axis="y")
     plt.ylabel("Number of words")
 
@@ -476,7 +473,7 @@ def plotAvgPositivism(userList, msgList, filename):
                       columns=["Avg positivism"])
     df.plot(kind="bar", title="Average positivism per user (0-1).\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
-    plt.rc("grid", linestyle="--", color="black")
+    plt.rc("grid", linestyle="--")
 
     plt.grid(axis="y")
     plt.ylabel("Positivism")
@@ -548,23 +545,25 @@ def getPositivismPerDay(userList, msgList):
     return avl
 
 
-def plotPositivismPerDay(userList, msgList, filename):
+def plotPositivismPerDay(userList, msgList, msaWindow, filename):
     raw = getPositivismPerDay(userList, msgList)
 
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
+    ax1.set_title("Original data")
+
+
     df = pd.DataFrame(raw).sort_index()
-    #FIXME: df = df.rolling(2).mean()
-    df.plot(title="Positivism per day (0-1)\nDuration: " +
-            str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
-    
-    #moving averages
+    ax1.grid(axis="y")
 
-    # TODO
+    df.plot(ax=ax1)
+    fig.suptitle("Positivism per day\nDuration: " +
+              str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
-    plt.xlabel("Date")
-    plt.ylabel("Positivism")
-    plt.rc("grid", linestyle="--", color="black")
-    plt.grid(axis="y")
-    plt.xticks(rotation=45)
+    ax2.set_title("Rolling " + str(msaWindow) + "-day mean")
+    ax2.grid(axis="y")
+
+    df.rolling(msaWindow).mean().plot(ax=ax2)
+
 
     print("***********************")
     filename = "plots/" + filename + "/PositivismPerDay.png"
@@ -575,32 +574,42 @@ def plotPositivismPerDay(userList, msgList, filename):
 
 
 # -------------------------------------------- main --------------------------------------------
-start_time = datetime.datetime.now()
-conversationFile = "cb"
-filename = "WaPy/" + conversationFile + ".txt"
-msgList = readFromFile(filename)
-userList = createUserList(msgList)
+def main(convName, plotting, posPlotting):
+    print("\n\n------------------------ WAPY 1.0 -------------------------- ")
+    start_time = datetime.datetime.now()
+    print("Program starting at: %s" % start_time.time())
+    print("***********************")
+    print("Reading from file and parsing...")
+    conversationFile = convName
+    filename = "WaPy/" + conversationFile + ".txt"
+    msgList = readFromFile(filename)
+    userList = createUserList(msgList)
+    print("***********************")
 
-# plots
-if not os.path.exists("plots"):
-    os.mkdir("plots")
-if not os.path.exists("plots/" + conversationFile):
-    os.mkdir("plots/" + conversationFile)
+    # plots
+    if not os.path.exists("plots"):
+        os.mkdir("plots")
+    if not os.path.exists("plots/" + conversationFile):
+        os.mkdir("plots/" + conversationFile)
 
-# ---------------------- normal plotting part ----------------------
-# plotAverageMessageLength(userList, msgList, conversationFile)
-# plotMessagesPerUser(userList, msgList, conversationFile)
-# plotWordsPerUserBar(userList, msgList, conversationFile)
-# plotWordsPerDayPerUser(userList, msgList, conversationFile)
-# plotWordsPerDOW(userList, msgList, conversationFile)
-# plotWordsPerHour(userList, msgList, conversationFile)
-# plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
-# plotResponseTimePerMinutes(userList, msgList, conversationFile)
+    # ---------------------- normal plotting part ----------------------
+    if plotting:
+        plotAverageMessageLength(userList, msgList, conversationFile)
+        plotMessagesPerUser(userList, msgList, conversationFile)
+        plotWordsPerUserBar(userList, msgList, conversationFile)
+        plotWordsPerDayPerUser(userList, msgList, conversationFile)
+        plotWordsPerDOW(userList, msgList, conversationFile)
+        plotWordsPerHour(userList, msgList, conversationFile)
+        plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
+        plotResponseTimePerMinutes(userList, msgList, conversationFile)
 
-# --------------------- positivism plotting part ----------------------
-plotAvgPositivism(userList, msgList, conversationFile)
-plotPositivismPerDay(userList, msgList, conversationFile)
+    # --------------------- positivism plotting part ----------------------
+    if posPlotting:
+        plotAvgPositivism(userList, msgList, conversationFile)
+        plotPositivismPerDay(userList, msgList, 3, conversationFile)
+
+    print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
+                                                                              start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
-                                                                    start_time).total_seconds()/60), (datetime.datetime.now()-start_time).total_seconds()%60))
+main("cb", False, True)
