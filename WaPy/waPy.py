@@ -10,6 +10,7 @@ import collections
 import numpy as np
 import pandas as pd
 from classifier import *
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 # TODO:
@@ -35,7 +36,7 @@ def deEmojify(inputString):
 
 
 #   Parses a line of message into its different fields
-def parseMsg(input, clf):
+def parseMsg(input):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
@@ -52,16 +53,12 @@ def parseMsg(input, clf):
     isMedia = False
     if content.find("Media omitted"):
         isMedia = True
-    if clf != None:
-        pos = clf.predict(content)
-    else:
-        pos = 0
-    return Message(user, line, content, isMedia, time, pos)
+    return Message(user, line, content, isMedia, time, 0)
 
 #   read conversation file and create a list with its parsed msgs
 
 
-def readFromFile(filepath, posPlotting):
+def readFromFile(filepath):
     clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -70,10 +67,7 @@ def readFromFile(filepath, posPlotting):
             if len(line) > 0 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
                 # print(line)
-                if posPlotting:
-                    msg = parseMsg(line, clf)
-                else:
-                    msg = parseMsg(line, None)
+                msg = parseMsg(line)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -278,14 +272,15 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     ax1.set_title("Original data")
     df = pd.DataFrame(raw).sort_index()
     ax1.grid(axis="y")
-    df.plot(ax=ax1)
+    df.plot(ax=ax1, rot=45)
 
     fig.suptitle("Words per day of conversation\nDuration: " +
               str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
     
     ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
-    ax2.grid(axis="y")
-    df.rolling(msaWindow1).mean().plot(ax=ax2)
+    ax2.grid(axis="y")    
+
+    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45)
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
     print("Generating:\t ", filename)
@@ -563,22 +558,24 @@ def plotPositivismPerDay(userList, msgList, filename):
     df = pd.DataFrame(raw).sort_index()
     ax1.grid(axis="y")
 
-    df.plot(ax=ax1)
+    df.plot(ax=ax1, rot=45)
     fig.suptitle("Positivism per day of conversation\nDuration: " +
               str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
-    ax2.grid(axis="y")
-
-    df.rolling(msaWindow1).mean().plot(ax=ax2)
-
-
-    print("***********************")
+    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45   )
     filename = "plots/" + filename + "/PositivismPerDay.png"
     print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated:\t ", filename)
     print("***********************")
+
+def posClassify(msgList):
+
+    clf = SentimentClassifier()
+    for i in range(len(msgList)-1):
+        if msgList[i].content.find("omitted") == -1:
+            msgList[i].pos = clf.predict(msgList[i].content)
 
 
 
@@ -602,7 +599,7 @@ def main(convName, plotting, posPlotting):
     print("Reading from file and parsing...")
     conversationFile = convName
     filename = "WaPy/" + conversationFile + ".txt"
-    msgList = readFromFile(filename, posPlotting)
+    msgList = readFromFile(filename)
     userList = createUserList(msgList)
 
     print("***********************")
@@ -626,6 +623,8 @@ def main(convName, plotting, posPlotting):
 
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
+        print("Positivism processing")
+        posClassify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
 
