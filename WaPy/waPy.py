@@ -10,10 +10,10 @@ import collections
 import numpy as np
 import pandas as pd
 from classifier import *
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 # TODO:
+# most repeated words
 # mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
 # ajuste lineal
@@ -271,16 +271,16 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
     ax1.set_title("Original data")
     df = pd.DataFrame(raw).sort_index()
-    ax1.grid(axis="y")
     df.plot(ax=ax1, rot=45)
+    ax1.grid()
 
     fig.suptitle("Words per day of conversation\nDuration: " +
               str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
     
-    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
-    ax2.grid(axis="y")    
+    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")   
 
     df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45)
+    ax2.grid()
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
     print("Generating:\t ", filename)
@@ -557,6 +557,7 @@ def plotPositivismPerDay(userList, msgList, filename):
 
     df = pd.DataFrame(raw).sort_index()
     ax1.grid(axis="y")
+    ax1.grid()
 
     df.plot(ax=ax1, rot=45)
     fig.suptitle("Positivism per day of conversation\nDuration: " +
@@ -564,20 +565,25 @@ def plotPositivismPerDay(userList, msgList, filename):
 
     ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
     df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45   )
+    ax2.grid()
     filename = "plots/" + filename + "/PositivismPerDay.png"
     print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
     print("Generated:\t ", filename)
     print("***********************")
 
-def posClassify(msgList):
 
+# takes the msgList and calculates the positiviness of its content
+def posClassify(msgList):
     clf = SentimentClassifier()
     for i in range(len(msgList)-1):
         if msgList[i].content.find("omitted") == -1:
             msgList[i].pos = clf.predict(msgList[i].content)
 
 
+
+def tfIdf(userList, msgList):
+    
 
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
