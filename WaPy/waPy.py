@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 from classifier import *
 
-
 # TODO:
 # most repeated words
 # mostRelevantWord per DOW, hour, user
@@ -59,7 +58,6 @@ def parseMsg(input):
 
 
 def readFromFile(filepath):
-    clf = SentimentClassifier()
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
@@ -581,9 +579,18 @@ def posClassify(msgList):
             msgList[i].pos = clf.predict(msgList[i].content)
 
 
+def getMostRepeatedWords(msgList, stopwords):    
+    nm = collections.defaultdict(lambda: collections.defaultdict(int))
+    for msg in msgList:
+        for w in msg.content.split():
+            nm[msg.username][w] += 1
 
-def tfIdf(userList, msgList):
-    
+    return nm
+
+
+
+
+
 
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
@@ -634,9 +641,12 @@ def main(convName, plotting, posPlotting):
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
 
+    # --------------------- TF-IDF ------------------
+
+
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
 
-main("cb", True, False)
+main("cb", False, False)
