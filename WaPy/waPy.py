@@ -57,7 +57,6 @@ def parseMsg(input):
     return Message(user, line, content, isMedia, time, 0)
 
 
-
 #   read conversation file and create a list with its parsed msgs
 def readFromFile(filepath):
     msgList = []
@@ -489,7 +488,7 @@ def plotAvgPositivism(userList, msgList, filename):
     print("***********************")
 
 
-def getMessagesPerDay(userList, msgList):
+def getMessagesPerDayPerUser(userList, msgList):
     avl = {}
 
     # get a list of the datetimes of days from first to last message, including empty days with no messages
@@ -516,7 +515,7 @@ def getMessagesPerDay(userList, msgList):
 
 def getPositivismPerDay(userList, msgList):
     avl = {}
-    msgCount = getMessagesPerDay(userList, msgList)
+    msgCount = getMessagesPerDayPerUser(userList, msgList)
 
     # get a list of the datetimes of days from first to last message, including empty days with no messages
     sdate = msgList[0].time.date()
@@ -577,9 +576,39 @@ def plotPositivismPerDay(userList, msgList, filename):
 # takes the msgList and calculates the positiviness of its content
 def posClassify(msgList):
     clf = SentimentClassifier()
-    for i in range(len(msgList)-1):
+    for i in range(len(msgList)):
         if msgList[i].content.find("omitted") == -1:
             msgList[i].pos = clf.predict(msgList[i].content)
+
+
+# plots a scatter plot about number of words / positivism
+def plotRelWordsPos(userList, msgList, filename):
+    rawWords = getWordsPerDayPerUser(userList, msgList)
+    rawPos = getPositivismPerDay(userList, msgList)
+
+    fig, ax = plt.subplots(nrows=1, ncols=len(userList), figsize=(15, 5))
+    fig.suptitle("Relation between number of words and positivism\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+
+    for i in range(len(userList)):
+        ax[i].set_ylabel("Positiviness")
+        ax[i].set_title(userList[i])
+        xValues = list(rawWords[userList[i]].values())
+        yValues = list(rawPos[userList[i]].values())
+        df = pd.DataFrame(xValues, yValues, columns=["Words"])
+        df.reset_index().plot.scatter(ax=ax[i], x="index", y="Words")
+
+        #fit
+        
+        
+        ax[i].grid()
+
+    print("***********************")
+    filename = "plots/" + filename + "/relationWordsPositivism.png"
+    print("Generating:\t ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated:\t ", filename)
+    print("***********************")
 
 
 # -------------------------------------------- main --------------------------------------------
@@ -632,11 +661,10 @@ def main(convName, plotting, posPlotting):
         posClassify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
-
-
+        plotRelWordsPos(userList, msgList, conversationFile)
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("lau", True, True)
+main("cb", True, True)
