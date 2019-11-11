@@ -1,5 +1,6 @@
 import datetime
 from datetime import timedelta
+import json
 import os
 import string
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ import collections
 import numpy as np
 import pandas as pd
 from classifier import *
+import unidecode
 
 # TODO:
 # most repeated words
@@ -54,9 +56,9 @@ def parseMsg(input):
         isMedia = True
     return Message(user, line, content, isMedia, time, 0)
 
+
+
 #   read conversation file and create a list with its parsed msgs
-
-
 def readFromFile(filepath):
     msgList = []
     with open(filepath, encoding="utf-8") as fp:
@@ -190,7 +192,8 @@ def getWordsPerDOW(userList, msgList):
 
 def plotAverageMessageLength(userList, msgList, filename):
     raw = getAvgMessageLength(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Avg len"]).sort_values(by="Avg len")
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=[
+                      "Avg len"]).sort_values(by="Avg len")
     df.index.name = "User"
     df.plot(kind="bar", title="Average message length\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
@@ -264,20 +267,20 @@ def getWordsPerUser(userList, msgList):
 
 # plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
-    msaWindow1 = round(getDaysLong(msgList)*0.2)
+    msaWindow1 = round(getDaysLong(msgList)*0.15)
     raw = getWordsPerDayPerUser(userList, msgList)
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     ax1.set_title("Original data")
     df = pd.DataFrame(raw).sort_index()
-    df.plot(ax=ax1, rot=45)
+    df.plot(ax=ax1, rot=25)
     ax1.grid()
 
     fig.suptitle("Words per day of conversation\nDuration: " +
-              str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
-    
-    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")   
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
-    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45)
+    ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
+
+    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=25)
     ax2.grid()
 
     filename = "plots/" + filename + "/WordsPerDayPerUser.png"
@@ -329,7 +332,8 @@ def plotWordsPerUserBar(userList, msgList, filename):
 # plots the total number of messages a user has sent
 def plotMessagesPerUser(userList, msgList, filename):
     raw = getMessagesPerUser(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Messages"]).sort_values(by="Messages")
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=[
+                      "Messages"]).sort_values(by="Messages")
 
     df.plot(kind="bar", title="Number of messages.\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
@@ -363,7 +367,8 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     minHour = lowerBound/60
     maxHour = upperBound/60
     raw = getDoubleTextTimes(userList, msgList, lowerBound, upperBound)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=["Times"]).sort_values(by="Times")
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=[
+                      "Times"]).sort_values(by="Times")
     df.plot(kind="bar", title="Double texts. " + str(minHour) + "h <= t <= " + str(maxHour) + " h\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
 
@@ -542,27 +547,25 @@ def getPositivismPerDay(userList, msgList):
     return avl
 
 
-
 # plots the positivism per day of conversation and the moving mean
 # msaWindow (int > 0) = the size of the mean window
 def plotPositivismPerDay(userList, msgList, filename):
     raw = getPositivismPerDay(userList, msgList)
-    msaWindow1 = round(getDaysLong(msgList)*0.2)
+    msaWindow1 = round(getDaysLong(msgList)*0.15)
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     ax1.set_title("Original data")
 
-
     df = pd.DataFrame(raw).sort_index()
     ax1.grid(axis="y")
-    ax1.grid()
 
-    df.plot(ax=ax1, rot=45)
+    df.plot(ax=ax1, rot=25)
+    ax1.grid()
     fig.suptitle("Positivism per day of conversation\nDuration: " +
-              str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     ax2.set_title("Rolling " + str(msaWindow1) + "-day mean")
-    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=45   )
+    df.rolling(msaWindow1).mean().plot(ax=ax2, rot=25)
     ax2.grid()
     filename = "plots/" + filename + "/PositivismPerDay.png"
     print("Generating:\t ", filename)
@@ -579,23 +582,12 @@ def posClassify(msgList):
             msgList[i].pos = clf.predict(msgList[i].content)
 
 
-def getMostRepeatedWords(msgList, stopwords):    
-    nm = collections.defaultdict(lambda: collections.defaultdict(int))
-    for msg in msgList:
-        for w in msg.content.split():
-            nm[msg.username][w] += 1
-
-    return nm
-
-
-
-
-
-
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
 # plotting (Boolean) = True for plotting the normal charts
 # posPlotting (Boolean) = True for plotting the positiviness charts
+
+
 def main(convName, plotting, posPlotting):
     print("\n\n------------------------ WAPY 1.0 -------------------------- ")
     if plotting:
@@ -611,7 +603,7 @@ def main(convName, plotting, posPlotting):
     print("***********************")
     print("Reading from file and parsing...")
     conversationFile = convName
-    filename = "WaPy/" + conversationFile + ".txt"
+    filename = "WaPy/conversations/" + conversationFile + ".txt"
     msgList = readFromFile(filename)
     userList = createUserList(msgList)
 
@@ -641,12 +633,10 @@ def main(convName, plotting, posPlotting):
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
 
-    # --------------------- TF-IDF ------------------
 
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-
-main("cb", False, False)
+main("lau", True, True)
