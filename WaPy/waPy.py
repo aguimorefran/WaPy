@@ -12,13 +12,12 @@ import numpy as np
 import pandas as pd
 from classifier import *
 import unidecode
+import seaborn as sns
 
 # TODO:
 # most repeated words
-# mostRelevantWord per DOW, hour, user
 # avgFollowingMsgs
-# ajuste lineal
-
+# emojis
 
 class Message:
 
@@ -573,7 +572,7 @@ def plotPositivismPerDay(userList, msgList, filename):
     print("***********************")
 
 
-# takes the msgList and calculates the positiviness of its content
+# takes the msgList and calculates the positiveness of its content
 def posClassify(msgList):
     clf = SentimentClassifier()
     for i in range(len(msgList)):
@@ -591,19 +590,15 @@ def plotRelWordsPos(userList, msgList, filename):
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
 
     for i in range(len(userList)):
-        ax[i].set_ylabel("Positiviness")
         ax[i].set_title(userList[i])
         xValues = list(rawWords[userList[i]].values())
         yValues = list(rawPos[userList[i]].values())
         df = pd.DataFrame(xValues, yValues, columns=["Words"])
-        df.reset_index().plot.scatter(ax=ax[i], x="index", y="Words")
+        df = df.reset_index()
 
-        #fit
-        
-        
+        sns.regplot(x="index", y="Words", data=df, ax=ax[i])
         ax[i].grid()
-
-    print("***********************")
+        ax[i].set_xlabel("Positiveness")
     filename = "plots/" + filename + "/relationWordsPositivism.png"
     print("Generating:\t ", filename)
     plt.savefig(filename, dpi=1400)
@@ -614,7 +609,7 @@ def plotRelWordsPos(userList, msgList, filename):
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
 # plotting (Boolean) = True for plotting the normal charts
-# posPlotting (Boolean) = True for plotting the positiviness charts
+# posPlotting (Boolean) = True for plotting the positiveness charts
 
 
 def main(convName, plotting, posPlotting):
@@ -667,4 +662,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cb", True, True)
+main("maria", False, True)
