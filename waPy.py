@@ -13,11 +13,16 @@ import pandas as pd
 from classifier import *
 import unidecode
 import seaborn as sns
+import sys
+from tqdm import tqdm
+import emoji
 
 # TODO:
 # most repeated words
 # avgFollowingMsgs
 # emojis
+# multithreading
+# percentage of processing 
 
 class Message:
 
@@ -28,12 +33,6 @@ class Message:
         self.isMedia = isMedia
         self.time = time
         self.pos = pos
-
-
-# removes emojis
-def deEmojify(inputString):
-    return inputString.encode('ascii', 'ignore').decode('ascii')
-
 
 #   Parses a line of message into its different fields
 def parseMsg(input):
@@ -62,7 +61,7 @@ def readFromFile(filepath):
     with open(filepath, encoding="utf-8") as fp:
         line = fp.readline()
         while line:
-            if len(line) > 0 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
+            if len(line) > 0 and line.find("created group") == -1 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
                 # print(line)
                 msg = parseMsg(line)
@@ -575,7 +574,7 @@ def plotPositivismPerDay(userList, msgList, filename):
 # takes the msgList and calculates the positiveness of its content
 def posClassify(msgList):
     clf = SentimentClassifier()
-    for i in range(len(msgList)):
+    for i in tqdm(range(len(msgList))):
         if msgList[i].content.find("omitted") == -1:
             msgList[i].pos = clf.predict(msgList[i].content)
 
@@ -662,4 +661,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("maria", False, True)
+main("cande", True, True)
