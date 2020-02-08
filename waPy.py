@@ -105,10 +105,7 @@ def getAvgMessageLength(userList, msgList):
     msgPerUser = getMessagesPerUser(userList, msgList)
     for m in msgList:
         # sets a limit of 100 words, just in case it is a pasted long text
-        if len(m.content.split()) >= 100:
-            avl[m.username] += 100
-        else:
-            avl[m.username] += len(m.content.split())
+        avl[m.username] += len(m.content.split())
     for k in avl.keys():
         avl[k] = round(avl[k] / msgPerUser[k], 2)
     return avl
@@ -626,7 +623,7 @@ def main(convName, plotting, posPlotting):
     print("***********************")
     print("Reading from file and parsing...")
     conversationFile = convName
-    filename = "WaPy/conversations/" + conversationFile + ".txt"
+    filename = conversationFile + ".txt"
     msgList = readFromFile(filename)
     userList = createUserList(msgList)
 
