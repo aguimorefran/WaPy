@@ -10,7 +10,7 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
-from classifier import *
+from classifier import SentimentClassifier
 import unidecode
 import seaborn as sns
 import sys
@@ -22,7 +22,6 @@ import emoji
 # avgFollowingMsgs
 # emojis
 # multithreading
-# percentage of processing 
 
 class Message:
 
@@ -261,7 +260,13 @@ def getWordsPerUser(userList, msgList):
 
 # plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
-    msaWindow1 = round(getDaysLong(msgList)*0.15)
+    days = getDaysLong(msgList)
+    if days < 10:
+        msaWindow1 = days
+    elif days >= 10 and days < 30:
+        msaWindow1 = 5
+    else:
+        msaWindow1 = 7
     raw = getWordsPerDayPerUser(userList, msgList)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     ax1.set_title("Original data")
@@ -545,7 +550,13 @@ def getPositivismPerDay(userList, msgList):
 # msaWindow (int > 0) = the size of the mean window
 def plotPositivismPerDay(userList, msgList, filename):
     raw = getPositivismPerDay(userList, msgList)
-    msaWindow1 = round(getDaysLong(msgList)*0.15)
+    days = getDaysLong(msgList)
+    if days < 10:
+        msaWindow1 = days
+    elif days >= 10 and days < 30:
+        msaWindow1 = 5
+    else:
+        msaWindow1 = 7
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     ax1.set_title("Original data")
@@ -570,6 +581,7 @@ def plotPositivismPerDay(userList, msgList, filename):
 
 # takes the msgList and calculates the positiveness of its content
 def posClassify(msgList):
+    
     clf = SentimentClassifier()
     for i in tqdm(range(len(msgList))):
         if msgList[i].content.find("omitted") == -1:
@@ -600,6 +612,29 @@ def plotRelWordsPos(userList, msgList, filename):
     plt.savefig(filename, dpi=1400)
     print("Generated:\t ", filename)
     print("***********************")
+
+
+# returns a dictionary with K = date and V = number of words in that date
+def getTotalWordsPerDay(msgList):
+    words = collections.defaultdict(int)
+    count = 0
+    for i in range(len(msgList)):
+        if msgList[i].time.day != msgList[i-1].time.day:
+            words[msgList[i-1].time] = count
+            count = 0
+        count += len(msgList[i].content.split())
+    
+    return words
+
+
+# returns the more talked n days
+def getMostTalkedDays(msgList, days):
+    words = getTotalWordsPerDay(msgList)
+    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
+    return dict(words)
+
+        
+
 
 
 # -------------------------------------------- main --------------------------------------------
@@ -635,6 +670,10 @@ def main(convName, plotting, posPlotting):
     if not os.path.exists("plots/" + conversationFile):
         os.mkdir("plots/" + conversationFile)
 
+
+    print(getMostTalkedDays(msgList, 5))
+    
+
     # ---------------------- normal plotting part ----------------------
     if plotting:
         plotAverageMessageLength(userList, msgList, conversationFile)
@@ -658,4 +697,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", True, True)
+main("cande", False, False)
