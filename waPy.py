@@ -18,10 +18,14 @@ from tqdm import tqdm
 import emoji
 
 # TODO:
+# positivism per day per yser
+#   per hour,day, DOW
 # most repeated words
 # avgFollowingMsgs
 # emojis
 # multithreading
+# export to txt
+# export to json
 
 class Message:
 
@@ -633,6 +637,23 @@ def getMostTalkedDays(msgList, days):
     words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
     return dict(words)
 
+
+# returns the days with the most positivism
+def getMostPositiveDays(msgList, nDays):
+    days = collections.defaultdict(float)
+    count = 0
+    suma = 0
+    for i in range(len(msgList)):
+        if msgList[i-1].time.day != msg[i].time.day:
+            days[msgList[i].time.day] = suma/count
+            suma = 0
+            count = 0
+        count += 1
+        suma += msgList[i].pos 
+    days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
+
+    return days
+        
         
 
 
@@ -669,9 +690,6 @@ def main(convName, plotting, posPlotting):
         os.mkdir("plots")
     if not os.path.exists("plots/" + conversationFile):
         os.mkdir("plots/" + conversationFile)
-
-
-    print(getMostTalkedDays(msgList, 5))
     
 
     # ---------------------- normal plotting part ----------------------
@@ -693,8 +711,10 @@ def main(convName, plotting, posPlotting):
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
 
+    print(getMostPositiveDays(msgList, 5))
+
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", False, False)
+main("cande", False, True)
