@@ -16,6 +16,7 @@ import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
+import multiprocessing
 
 # TODO:
 # positivism per day per yser
@@ -585,12 +586,31 @@ def plotPositivismPerDay(userList, msgList, filename):
 
 # takes the msgList and calculates the positiveness of its content
 def posClassify(msgList):
-    
     clf = SentimentClassifier()
     for i in tqdm(range(len(msgList))):
         if msgList[i].content.find("omitted") == -1:
             msgList[i].pos = clf.predict(msgList[i].content)
 
+
+# divides the msg array in cpu-1 parts, and each part is treated by a thread, then the arrays are merged
+def posClassifyConcurrent(msgList):
+    #TODO: create semaphores
+    cores = multiprocessing.cpu_count()-1
+    #TODO: create threads with id, and each calls treat with the id and the part of the array correspondent
+    # this function waits for all semaphores to finish, and then merges the arrays
+
+
+
+# takes a part of the array, and classifies it, saves it into pos, and returns it
+def treat(id, first, last, msgList, sem):
+    pos = []
+    clf = SentimentClassifier()
+    for i in range(first, last):
+        pos.append(clf.predict(msgList[i].content))
+    
+    #unlock semaphore[id]
+    return pos
+    
 
 # plots a scatter plot about number of words / positivism
 def plotRelWordsPos(userList, msgList, filename):
@@ -644,7 +664,7 @@ def getMostPositiveDays(msgList, nDays):
     count = 0
     suma = 0
     for i in range(len(msgList)):
-        if msgList[i-1].time.day != msg[i].time.day:
+        if msgList[i-1].time.day != msgList[i].time.day:
             days[msgList[i].time.day] = suma/count
             suma = 0
             count = 0
