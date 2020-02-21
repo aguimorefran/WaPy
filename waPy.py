@@ -17,6 +17,7 @@ import sys
 from tqdm import tqdm
 import emoji
 import multiprocessing
+from concurrent import futures
 
 # TODO:
 # positivism per day per yser
@@ -27,7 +28,6 @@ import multiprocessing
 # multithreading
 # export to txt
 # export to json
-
 
 class Message:
 
@@ -40,8 +40,6 @@ class Message:
         self.pos = pos
 
 #   Parses a line of message into its different fields
-
-
 def parseMsg(input):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
@@ -588,18 +586,42 @@ def plotPositivismPerDay(userList, msgList, filename):
 
 
 # takes the msgList and calculates the positiveness of its content
-def posClassify(msgList):
-    clf = SentimentClassifier()
-    for i in tqdm(range(len(msgList))):
+# def posClassify(msgList):
+#     clf = SentimentClassifier()
+#     pbar = tqdm(total=len(msgList))
+#     for i in range(len(msgList)):
+#         if msgList[i].content.find("omitted") == -1:
+#             msgList[i].pos = clf.predict(msgList[i].content)
+#         pbar.update(1)
+
+def posClassify(msg, idx, clf):
+    print(idx)
+    return idx, clf.predict(msg.content)
+
+def classify(msgList):
+    cores = multiprocessing.cpu_count()-1
+    clf = []
+    for c in range(cores):
+        print("\tCreating " + str(c) + " clf")
+        clf.append(SentimentClassifier())
+    print("clf created")
+
+    calls = []
+    executor = futures.ProcessPoolExecutor(max_workers=4)
+    for i in range(len(msgList)):
         if msgList[i].content.find("omitted") == -1:
-            msgList[i].pos = clf.predict(msgList[i].content)
+            call = executor.submit(posClassify, msgList[i], i, clf[i%cores])
+            calls.append(call)
+
+    # wait for all processes to finish
+    executor.shutdown()
+
+    # assign the result of individual calls to msgList[i].pos
+    for call in calls:
+        result = call.result()
+        msgList[result[0]].pos = result[1]
 
 
-# divides the msg array in cpu-1 parts, and each part is treated by a thread, then the arrays are merged
-def posClassifyConcurrent(msgList):
-    
-
-def treat()
 
 # plots a scatter plot about number of words / positivism
 def plotRelWordsPos(userList, msgList, filename):
@@ -636,15 +658,14 @@ def getTotalWordsPerDay(msgList):
             words[msgList[i-1].time] = count
             count = 0
         count += len(msgList[i].content.split())
-
+    
     return words
 
 
 # returns the more talked n days
 def getMostTalkedDays(msgList, days):
     words = getTotalWordsPerDay(msgList)
-    words = collections.OrderedDict(
-        sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
+    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
     return dict(words)
 
 
@@ -659,11 +680,13 @@ def getMostPositiveDays(msgList, nDays):
             suma = 0
             count = 0
         count += 1
-        suma += msgList[i].pos
-    days = dict(collections.OrderedDict(
-        sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
+        suma += msgList[i].pos 
+    days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
 
     return days
+        
+        
+
 
 
 # -------------------------------------------- main --------------------------------------------
@@ -698,6 +721,7 @@ def main(convName, plotting, posPlotting):
         os.mkdir("plots")
     if not os.path.exists("plots/" + conversationFile):
         os.mkdir("plots/" + conversationFile)
+    
 
     # ---------------------- normal plotting part ----------------------
     if plotting:
@@ -713,7 +737,7 @@ def main(convName, plotting, posPlotting):
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
-        posClassify(msgList)
+        classify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
