@@ -28,6 +28,7 @@ import multiprocessing
 # export to txt
 # export to json
 
+
 class Message:
 
     def __init__(self, username, line, content, isMedia, time, pos):
@@ -39,6 +40,8 @@ class Message:
         self.pos = pos
 
 #   Parses a line of message into its different fields
+
+
 def parseMsg(input):
     # 012345678901234567890123456789
     # 10/10/2018, 19:33 - Lau: hola que tal
@@ -594,23 +597,9 @@ def posClassify(msgList):
 
 # divides the msg array in cpu-1 parts, and each part is treated by a thread, then the arrays are merged
 def posClassifyConcurrent(msgList):
-    #TODO: create semaphores
-    cores = multiprocessing.cpu_count()-1
-    #TODO: create threads with id, and each calls treat with the id and the part of the array correspondent
-    # this function waits for all semaphores to finish, and then merges the arrays
-
-
-
-# takes a part of the array, and classifies it, saves it into pos, and returns it
-def treat(id, first, last, msgList, sem):
-    pos = []
-    clf = SentimentClassifier()
-    for i in range(first, last):
-        pos.append(clf.predict(msgList[i].content))
     
-    #unlock semaphore[id]
-    return pos
-    
+
+def treat()
 
 # plots a scatter plot about number of words / positivism
 def plotRelWordsPos(userList, msgList, filename):
@@ -647,14 +636,15 @@ def getTotalWordsPerDay(msgList):
             words[msgList[i-1].time] = count
             count = 0
         count += len(msgList[i].content.split())
-    
+
     return words
 
 
 # returns the more talked n days
 def getMostTalkedDays(msgList, days):
     words = getTotalWordsPerDay(msgList)
-    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
+    words = collections.OrderedDict(
+        sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
     return dict(words)
 
 
@@ -669,13 +659,11 @@ def getMostPositiveDays(msgList, nDays):
             suma = 0
             count = 0
         count += 1
-        suma += msgList[i].pos 
-    days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
+        suma += msgList[i].pos
+    days = dict(collections.OrderedDict(
+        sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
 
     return days
-        
-        
-
 
 
 # -------------------------------------------- main --------------------------------------------
@@ -710,7 +698,6 @@ def main(convName, plotting, posPlotting):
         os.mkdir("plots")
     if not os.path.exists("plots/" + conversationFile):
         os.mkdir("plots/" + conversationFile)
-    
 
     # ---------------------- normal plotting part ----------------------
     if plotting:
