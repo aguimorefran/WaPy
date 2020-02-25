@@ -16,9 +16,9 @@ import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
-from concurrent.futures import ThreadPoolExecutor
 
 # TODO:
+# identify links (spotify, youtube)
 # positivism per day per yser
 #   per hour,day, DOW
 # most repeated words
@@ -644,23 +644,28 @@ def getMostTalkedDays(msgList, days):
 
 # returns the days with the most positivism
 def getMostPositiveDays(msgList, nDays):
-    days = collections.defaultdict(float)
-    count = 0
-    suma = 0
+    if msgList[0].pos == 0:
+        print("ERROR: is positiviness computed?")
+        return None
+    msgCount = 0
+    suma = 0.0
+    avl = collections.defaultdict(int)  
     for i in range(len(msgList)):
-        if msgList[i-1].time.day != msgList[i].time.day:
-            try:
-                days[msgList[i].time.day] = suma/count
-            except ZeroDivisionError:
-                days[msgList[i].time.day] = None
-            
+        # if a day passes
+        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
+            print(msgCount, msgCount)
+            avl[msgList[i].time.day] = suma/msgCount
+            msgCount = 0
             suma = 0
-            count = 0
-        count += 1
-        suma += msgList[i].pos 
-    days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
+        msgCount += 1
+        suma += msgList[i].pos
+    
+    return avl
 
-    return days
+
+
+
+    
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
 # plotting (Boolean) = True for plotting the normal charts
@@ -670,9 +675,9 @@ def getMostPositiveDays(msgList, nDays):
 def main(convName, plotting, posPlotting):
     print("\n\n------------------------ WAPY 1.0 -------------------------- ")
     if plotting:
-        print("Normal plotting ENABLED")
+        print("Basic plotting ENABLED")
     else:
-        print("Normal plotting DISABLED")
+        print("Basic plotting DISABLED")
     if posPlotting:
         print("Positivism plotting ENABLED")
     else:
@@ -726,4 +731,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", True, False)
+main("cande", False, True)
