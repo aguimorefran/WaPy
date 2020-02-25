@@ -16,8 +16,7 @@ import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
-import multiprocessing
-from concurrent import futures
+from concurrent.futures import ThreadPoolExecutor
 
 # TODO:
 # positivism per day per yser
@@ -585,41 +584,15 @@ def plotPositivismPerDay(userList, msgList, filename):
     print("***********************")
 
 
-# takes the msgList and calculates the positiveness of its content
-# def posClassify(msgList):
-#     clf = SentimentClassifier()
-#     pbar = tqdm(total=len(msgList))
-#     for i in range(len(msgList)):
-#         if msgList[i].content.find("omitted") == -1:
-#             msgList[i].pos = clf.predict(msgList[i].content)
-#         pbar.update(1)
-
-def posClassify(msg, idx, clf):
-    print(idx)
-    return idx, clf.predict(msg.content)
-
-def classify(msgList):
-    cores = multiprocessing.cpu_count()-1
-    clf = []
-    for c in range(cores):
-        print("\tCreating " + str(c) + " clf")
-        clf.append(SentimentClassifier())
-    print("clf created")
-
-    calls = []
-    executor = futures.ProcessPoolExecutor(max_workers=4)
+#takes the msgList and calculates the positiveness of its content
+def posClassify(msgList):
+    clf = SentimentClassifier()
+    pbar = tqdm(total=len(msgList))
     for i in range(len(msgList)):
         if msgList[i].content.find("omitted") == -1:
-            call = executor.submit(posClassify, msgList[i], i, clf[i%cores])
-            calls.append(call)
+            msgList[i].pos = clf.predict(msgList[i].content)
+        pbar.update(1)
 
-    # wait for all processes to finish
-    executor.shutdown()
-
-    # assign the result of individual calls to msgList[i].pos
-    for call in calls:
-        result = call.result()
-        msgList[result[0]].pos = result[1]
 
 
 
@@ -676,7 +649,11 @@ def getMostPositiveDays(msgList, nDays):
     suma = 0
     for i in range(len(msgList)):
         if msgList[i-1].time.day != msgList[i].time.day:
-            days[msgList[i].time.day] = suma/count
+            try:
+                days[msgList[i].time.day] = suma/count
+            except ZeroDivisionError:
+                days[msgList[i].time.day] = None
+            
             suma = 0
             count = 0
         count += 1
@@ -684,11 +661,6 @@ def getMostPositiveDays(msgList, nDays):
     days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
 
     return days
-        
-        
-
-
-
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
 # plotting (Boolean) = True for plotting the normal charts
@@ -725,6 +697,8 @@ def main(convName, plotting, posPlotting):
 
     # ---------------------- normal plotting part ----------------------
     if plotting:
+        # test with no multiprocessing
+        start_nmp = datetime.datetime.now()
         plotAverageMessageLength(userList, msgList, conversationFile)
         plotMessagesPerUser(userList, msgList, conversationFile)
         plotWordsPerUserBar(userList, msgList, conversationFile)
@@ -733,19 +707,23 @@ def main(convName, plotting, posPlotting):
         plotWordsPerHour(userList, msgList, conversationFile)
         plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
         plotResponseTimePerMinutes(userList, msgList, conversationFile)
+        end_nmp = (datetime.datetime.now()-start_nmp).total_seconds()
+        print("\n\nRuntime no multiprocessing: " + str(round(end_nmp)) + " seconds")
+
+
 
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
-        classify(msgList)
+        posClassify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
 
-    print(getMostPositiveDays(msgList, 5))
+    #print(getMostPositiveDays(msgList, 5))
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", False, True)
+main("cande", True, False)
