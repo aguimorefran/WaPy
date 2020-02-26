@@ -19,6 +19,7 @@ import emoji
 
 
 # TODO:
+# identify links (spotify, youtube)
 # positivism per day per yser
 #   per hour,day, DOW
 # most repeated words
@@ -648,24 +649,28 @@ def getMostTalkedDays(msgList, days):
 
 # returns the days with the most positivism
 def getMostPositiveDays(msgList, nDays):
-    days = collections.defaultdict(float)
-    count = 0
-    suma = 0
+    if msgList[0].pos == 0:
+        print("ERROR: is positiviness computed?")
+        return None
+    msgCount = 0
+    suma = 0.0
+    avl = collections.defaultdict(int)  
     for i in range(len(msgList)):
-        if msgList[i-1].time.day != msgList[i].time.day:
-            days[msgList[i].time.day] = suma/count
+        # if a day passes
+        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
+            print(msgCount, msgCount)
+            avl[msgList[i].time.day] = suma/msgCount
+            msgCount = 0
             suma = 0
-            count = 0
-        count += 1
-        suma += msgList[i].pos 
-    days = dict(collections.OrderedDict(sorted(days.items(), key=operator.itemgetter(1), reverse=True)[:nDays]))
-
-    return days
-        
-        
+        msgCount += 1
+        suma += msgList[i].pos
+    
+    return avl
 
 
 
+
+    
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
 # plotting (Boolean) = True for plotting the normal charts
@@ -675,9 +680,9 @@ def getMostPositiveDays(msgList, nDays):
 def main(convName, plotting, posPlotting):
     print("\n\n------------------------ WAPY 1.0 -------------------------- ")
     if plotting:
-        print("Normal plotting ENABLED")
+        print("Basic plotting ENABLED")
     else:
-        print("Normal plotting DISABLED")
+        print("Basic plotting DISABLED")
     if posPlotting:
         print("Positivism plotting ENABLED")
     else:
@@ -702,6 +707,8 @@ def main(convName, plotting, posPlotting):
 
     # ---------------------- normal plotting part ----------------------
     if plotting:
+        # test with no multiprocessing
+        start_nmp = datetime.datetime.now()
         plotAverageMessageLength(userList, msgList, conversationFile)
         plotMessagesPerUser(userList, msgList, conversationFile)
         plotWordsPerUserBar(userList, msgList, conversationFile)
@@ -714,12 +721,12 @@ def main(convName, plotting, posPlotting):
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
-        classify(msgList)
+        posClassify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
 
-    print(getMostPositiveDays(msgList, 5))
+    #print(getMostPositiveDays(msgList, 5))
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
