@@ -16,8 +16,7 @@ import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
-import multiprocessing
-from concurrent import futures
+
 
 # TODO:
 # positivism per day per yser
@@ -39,6 +38,9 @@ class Message:
         self.time = time
         self.pos = pos
 
+def remove_emoji(text):
+    return emoji.get_emoji_regexp().sub(u'', text)
+
 #   Parses a line of message into its different fields
 def parseMsg(input):
     # 012345678901234567890123456789
@@ -51,11 +53,13 @@ def parseMsg(input):
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = line[20:].split(':')[1].rstrip().lstrip()
-    user = line[20:].split(':')[0]
+    content = remove_emoji(line[20:].split(':')[1].rstrip().lstrip())
+    if content == '':
+        content == "EMOJI"
+    user = remove_emoji(line[20:].split(':')[0])
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
-    if content.find("Media omitted"):
+    if content == "<Media omitted>":
         isMedia = True
     return Message(user, line, content, isMedia, time, 0)
 
@@ -585,41 +589,14 @@ def plotPositivismPerDay(userList, msgList, filename):
     print("***********************")
 
 
-# takes the msgList and calculates the positiveness of its content
-# def posClassify(msgList):
-#     clf = SentimentClassifier()
-#     pbar = tqdm(total=len(msgList))
-#     for i in range(len(msgList)):
-#         if msgList[i].content.find("omitted") == -1:
-#             msgList[i].pos = clf.predict(msgList[i].content)
-#         pbar.update(1)
-
-def posClassify(msg, idx, clf):
-    print(idx)
-    return idx, clf.predict(msg.content)
-
+#takes the msgList and calculates the positiveness of its content
 def classify(msgList):
-    cores = multiprocessing.cpu_count()-1
-    clf = []
-    for c in range(cores):
-        print("\tCreating " + str(c) + " clf")
-        clf.append(SentimentClassifier())
-    print("clf created")
-
-    calls = []
-    executor = futures.ProcessPoolExecutor(max_workers=4)
+    clf = SentimentClassifier()
+    pbar = tqdm(total=len(msgList))
     for i in range(len(msgList)):
         if msgList[i].content.find("omitted") == -1:
-            call = executor.submit(posClassify, msgList[i], i, clf[i%cores])
-            calls.append(call)
-
-    # wait for all processes to finish
-    executor.shutdown()
-
-    # assign the result of individual calls to msgList[i].pos
-    for call in calls:
-        result = call.result()
-        msgList[result[0]].pos = result[1]
+            msgList[i].pos = clf.predict(msgList[i].content)
+        pbar.update(1)
 
 
 
@@ -731,8 +708,8 @@ def main(convName, plotting, posPlotting):
         plotWordsPerDayPerUser(userList, msgList, conversationFile)
         plotWordsPerDOW(userList, msgList, conversationFile)
         plotWordsPerHour(userList, msgList, conversationFile)
-        plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
         plotResponseTimePerMinutes(userList, msgList, conversationFile)
+        plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
 
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
