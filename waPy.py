@@ -15,7 +15,6 @@ import unidecode
 import seaborn as sns
 import sys
 from tqdm import tqdm
-import emoji
 
 # TODO:
 # identify links (spotify, youtube)
@@ -38,6 +37,10 @@ class Message:
         self.time = time
         self.pos = pos
 
+# removes any emoji from the string
+def deEmojify(inputString):
+    return inputString.encode('ascii', 'ignore').decode('ascii')
+
 #   Parses a line of message into its different fields
 def parseMsg(input):
     # 012345678901234567890123456789
@@ -52,6 +55,7 @@ def parseMsg(input):
     minute = int(line[15:17])
     content = line[20:].split(':')[1].rstrip().lstrip()
     user = line[20:].split(':')[0]
+    user = deEmojify(user)
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
     if content.find("Media omitted"):
