@@ -16,7 +16,8 @@ import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
-
+import re
+from urllib.parse import urlparse
 
 # TODO:
 # identify links (spotify, youtube)
@@ -269,6 +270,61 @@ def getWordsPerUser(userList, msgList):
     return collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1)))
 
 
+# returns a dictionary with K = date and V = number of words in that date
+def getTotalWordsPerDay(msgList):
+    words = collections.defaultdict(int)
+    count = 0
+    for i in range(len(msgList)):
+        if msgList[i].time.day != msgList[i-1].time.day:
+            words[msgList[i-1].time] = count
+            count = 0
+        count += len(msgList[i].content.split())
+    
+    return words
+
+
+# returns the more talked n days
+def getMostTalkedDays(msgList, days):
+    words = getTotalWordsPerDay(msgList)
+    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
+    return dict(words)
+
+
+# returns the days with the most positivism
+def getMostPositiveDays(msgList, nDays):
+    if msgList[0].pos == 0:
+        print("ERROR: is positiviness computed?")
+        return None
+    msgCount = 0
+    suma = 0.0
+    avl = collections.defaultdict(int)  
+    for i in range(len(msgList)):
+        # if a day passes
+        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
+            print(msgCount, msgCount)
+            avl[msgList[i].time.day] = suma/msgCount
+            msgCount = 0
+            suma = 0
+        msgCount += 1
+        suma += msgList[i].pos
+    
+    return avl
+
+# returns the list of url's found in a string
+def findUrl(string):
+    url = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+] |[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string) 
+    return url 
+
+# returns a dictionary with the amount of links each user has sent
+def links(userList, msgList):
+    d = collections.defaultdict(lambda: collections.defaultdict(int))
+    for msg in msgList:
+        if not msg.isMedia and msg.conteng != 'EMOJI':
+            urls = findUrl(msg.content)
+            if len(urls) > 0:
+                
+
+
 # plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
     days = getDaysLong(msgList)
@@ -284,6 +340,7 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     df = pd.DataFrame(raw).sort_index()
     df.plot(ax=ax1, rot=25)
     ax1.grid()
+
 
     fig.suptitle("Words per day of conversation\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
@@ -626,50 +683,6 @@ def plotRelWordsPos(userList, msgList, filename):
     print("Generated:\t ", filename)
     print("***********************")
 
-
-# returns a dictionary with K = date and V = number of words in that date
-def getTotalWordsPerDay(msgList):
-    words = collections.defaultdict(int)
-    count = 0
-    for i in range(len(msgList)):
-        if msgList[i].time.day != msgList[i-1].time.day:
-            words[msgList[i-1].time] = count
-            count = 0
-        count += len(msgList[i].content.split())
-    
-    return words
-
-
-# returns the more talked n days
-def getMostTalkedDays(msgList, days):
-    words = getTotalWordsPerDay(msgList)
-    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
-    return dict(words)
-
-
-# returns the days with the most positivism
-def getMostPositiveDays(msgList, nDays):
-    if msgList[0].pos == 0:
-        print("ERROR: is positiviness computed?")
-        return None
-    msgCount = 0
-    suma = 0.0
-    avl = collections.defaultdict(int)  
-    for i in range(len(msgList)):
-        # if a day passes
-        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
-            print(msgCount, msgCount)
-            avl[msgList[i].time.day] = suma/msgCount
-            msgCount = 0
-            suma = 0
-        msgCount += 1
-        suma += msgList[i].pos
-    
-    return avl
-
-
-
-
     
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
@@ -721,7 +734,7 @@ def main(convName, plotting, posPlotting):
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
-        posClassify(msgList)
+        classify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
