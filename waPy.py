@@ -45,7 +45,7 @@ def remove_emoji(text):
 #   Parses a line of message into its different fields
 def parseMsg(input):
     # 012345678901234567890123456789
-    # 10/10/2018, 19:33 - Lau: hola que tal
+    # 10/10/2018, 19:33 - Cande: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
 
     line = input.rstrip()
