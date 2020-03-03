@@ -10,12 +10,13 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
-from classifier import SentimentClassifier
+#from classifier import SentimentClassifier
 import unidecode
 import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
+import re
 
 
 # TODO:
@@ -54,9 +55,7 @@ def parseMsg(input):
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = remove_emoji(line[20:].split(':')[1].rstrip().lstrip())
-    if content == '':
-        content == "EMOJI"
+    content = line[20:].split(':')[1].rstrip().lstrip()
     user = remove_emoji(line[20:].split(':')[0])
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
@@ -73,8 +72,9 @@ def readFromFile(filepath):
         while line:
             if len(line) > 0 and line.find("created group") == -1 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
-                # print(line)
+                print(line)
                 msg = parseMsg(line)
+                print(msg.content)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -269,6 +269,47 @@ def getWordsPerUser(userList, msgList):
     return collections.OrderedDict(sorted(avl.items(), key=operator.itemgetter(1)))
 
 
+# returns a dictionary with K = date and V = number of words in that date
+def getTotalWordsPerDay(msgList):
+    words = collections.defaultdict(int)
+    count = 0
+    for i in range(len(msgList)):
+        if msgList[i].time.day != msgList[i-1].time.day:
+            words[msgList[i-1].time] = count
+            count = 0
+        count += len(msgList[i].content.split())
+    
+    return words
+
+
+# returns the more talked n days
+def getMostTalkedDays(msgList, days):
+    words = getTotalWordsPerDay(msgList)
+    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
+    return dict(words)
+
+
+# returns the days with the most positivism
+def getMostPositiveDays(msgList, nDays):
+    if msgList[0].pos == 0:
+        print("ERROR: is positiviness computed?")
+        return None
+    msgCount = 0
+    suma = 0.0
+    avl = collections.defaultdict(int)  
+    for i in range(len(msgList)):
+        # if a day passes
+        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
+            print(msgCount, msgCount)
+            avl[msgList[i].time.day] = suma/msgCount
+            msgCount = 0
+            suma = 0
+        msgCount += 1
+        suma += msgList[i].pos
+    
+    return avl
+
+
 # plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
     days = getDaysLong(msgList)
@@ -284,6 +325,7 @@ def plotWordsPerDayPerUser(userList, msgList, filename):
     df = pd.DataFrame(raw).sort_index()
     df.plot(ax=ax1, rot=25)
     ax1.grid()
+
 
     fig.suptitle("Words per day of conversation\nDuration: " +
                  str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
@@ -626,50 +668,6 @@ def plotRelWordsPos(userList, msgList, filename):
     print("Generated:\t ", filename)
     print("***********************")
 
-
-# returns a dictionary with K = date and V = number of words in that date
-def getTotalWordsPerDay(msgList):
-    words = collections.defaultdict(int)
-    count = 0
-    for i in range(len(msgList)):
-        if msgList[i].time.day != msgList[i-1].time.day:
-            words[msgList[i-1].time] = count
-            count = 0
-        count += len(msgList[i].content.split())
-    
-    return words
-
-
-# returns the more talked n days
-def getMostTalkedDays(msgList, days):
-    words = getTotalWordsPerDay(msgList)
-    words = collections.OrderedDict(sorted(words.items(), key=operator.itemgetter(1), reverse=True)[:days])
-    return dict(words)
-
-
-# returns the days with the most positivism
-def getMostPositiveDays(msgList, nDays):
-    if msgList[0].pos == 0:
-        print("ERROR: is positiviness computed?")
-        return None
-    msgCount = 0
-    suma = 0.0
-    avl = collections.defaultdict(int)  
-    for i in range(len(msgList)):
-        # if a day passes
-        if (msgList[i].time.day != msgList[i-1].time.day and i>1) or i == range(msgList):
-            print(msgCount, msgCount)
-            avl[msgList[i].time.day] = suma/msgCount
-            msgCount = 0
-            suma = 0
-        msgCount += 1
-        suma += msgList[i].pos
-    
-    return avl
-
-
-
-
     
 # -------------------------------------------- main --------------------------------------------
 # convName = the name of the conversation, without .txt
@@ -721,7 +719,7 @@ def main(convName, plotting, posPlotting):
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
-        posClassify(msgList)
+        classify(msgList)
         plotAvgPositivism(userList, msgList, conversationFile)
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
@@ -732,4 +730,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", False, True)
+main("cande", False, False)
