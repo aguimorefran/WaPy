@@ -10,17 +10,16 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
-#from classifier import SentimentClassifier
+from classifier import SentimentClassifier
 import unidecode
 import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
 import re
-
+from urllib.parse import urlparse
 
 # TODO:
-# identify links (spotify, youtube)
 # positivism per day per yser
 #   per hour,day, DOW
 # most repeated words
@@ -55,7 +54,7 @@ def parseMsg(input):
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = line[20:].split(':',1)[1].rstrip().lstrip()
+    content = remove_emoji(line[20:].split(':',1)[1].rstrip().lstrip())
     user = remove_emoji(line[20:].split(':')[0])
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
@@ -72,9 +71,7 @@ def readFromFile(filepath):
         while line:
             if len(line) > 0 and line.find("created group") == -1 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
-                #print(line)
                 msg = parseMsg(line)
-                #print(msg.content)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -466,6 +463,34 @@ def getResponseTimePerMinutes(userList, msgList):
 
     return avl
 
+# returns domain
+def parseUrl(url):
+    parsed_uri = urlparse(url)
+    result = '{uri.netloc}'.format(uri=parsed_uri)
+    return result
+
+# returns a dictionary with the number of links each user has sent
+def getUrlsPerUser(msgList):
+    d = collections.defaultdict(lambda: collections.defaultdict(int))
+    for msg in msgList:
+        urls = re.findall(r'(https?://[^\s]+)', msg.content)
+        if len(urls) > 0:
+            domains = []
+            for url in urls:
+                domains = parseUrl(url)
+            for d in domains:
+                if d in d[msg.username].keys():
+                    #FIXME
+    
+    return d
+
+        
+
+
+#####################################################################
+######################## PLOTTING FUNCTIONS #########################
+#####################################################################
+
 
 # plots the response time of every user
 def plotResponseTimePerMinutes(userList, msgList, filename):
@@ -706,7 +731,6 @@ def main(convName, plotting, posPlotting):
     # ---------------------- normal plotting part ----------------------
     if plotting:
         # test with no multiprocessing
-        start_nmp = datetime.datetime.now()
         plotAverageMessageLength(userList, msgList, conversationFile)
         plotMessagesPerUser(userList, msgList, conversationFile)
         plotWordsPerUserBar(userList, msgList, conversationFile)
@@ -716,6 +740,8 @@ def main(convName, plotting, posPlotting):
         plotResponseTimePerMinutes(userList, msgList, conversationFile)
         plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
 
+    print(getUrlsPerUser(msgList))
+
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
         print("Positivism processing")
@@ -724,7 +750,6 @@ def main(convName, plotting, posPlotting):
         plotPositivismPerDay(userList, msgList, conversationFile)
         plotRelWordsPos(userList, msgList, conversationFile)
 
-    #print(getMostPositiveDays(msgList, 5))
 
     print("\n\n------- ELAPSED TIME: %s minutes %s seconds -------" % (round((datetime.datetime.now() -
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
