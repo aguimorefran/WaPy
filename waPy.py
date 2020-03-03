@@ -10,14 +10,14 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
-from classifier import SentimentClassifier
+#from classifier import SentimentClassifier
 import unidecode
 import seaborn as sns
 import sys
 from tqdm import tqdm
 import emoji
 import re
-from urllib.parse import urlparse
+
 
 # TODO:
 # identify links (spotify, youtube)
@@ -46,7 +46,7 @@ def remove_emoji(text):
 #   Parses a line of message into its different fields
 def parseMsg(input):
     # 012345678901234567890123456789
-    # 10/10/2018, 19:33 - Lau: hola que tal
+    # 10/10/2018, 19:33 - Cande: hola que tal
     # 10/10/2018, 19:34 - Fco: bien y tu
 
     line = input.rstrip()
@@ -55,9 +55,7 @@ def parseMsg(input):
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = remove_emoji(line[20:].split(':')[1].rstrip().lstrip())
-    if content == '':
-        content == "EMOJI"
+    content = line[20:].split(':')[1].rstrip().lstrip()
     user = remove_emoji(line[20:].split(':')[0])
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
@@ -74,8 +72,9 @@ def readFromFile(filepath):
         while line:
             if len(line) > 0 and line.find("created group") == -1 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
-                # print(line)
+                print(line)
                 msg = parseMsg(line)
+                print(msg.content)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
@@ -309,20 +308,6 @@ def getMostPositiveDays(msgList, nDays):
         suma += msgList[i].pos
     
     return avl
-
-# returns the list of url's found in a string
-def findUrl(string):
-    url = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+] |[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string) 
-    return url 
-
-# returns a dictionary with the amount of links each user has sent
-def links(userList, msgList):
-    d = collections.defaultdict(lambda: collections.defaultdict(int))
-    for msg in msgList:
-        if not msg.isMedia and msg.conteng != 'EMOJI':
-            urls = findUrl(msg.content)
-            if len(urls) > 0:
-                
 
 
 # plots a the words per day of conversation, from start to finish
@@ -745,4 +730,4 @@ def main(convName, plotting, posPlotting):
                                                                               start_time).total_seconds()/60), round((datetime.datetime.now()-start_time).total_seconds() % 60)))
 
 
-main("cande", False, True)
+main("cande", False, False)

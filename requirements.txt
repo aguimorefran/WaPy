@@ -5,3 +5,4 @@ seaborn
 tqdm
 emoji
 spanish_sentiment_analysis
+urlextract
