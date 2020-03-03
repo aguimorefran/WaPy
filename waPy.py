@@ -55,7 +55,7 @@ def parseMsg(input):
     year = int(line[6:10])
     hour = int(line[12:14])
     minute = int(line[15:17])
-    content = line[20:].split(':')[1].rstrip().lstrip()
+    content = line[20:].split(':',1)[1].rstrip().lstrip()
     user = remove_emoji(line[20:].split(':')[0])
     time = datetime.datetime(year, month, day, hour, minute)
     isMedia = False
@@ -72,9 +72,9 @@ def readFromFile(filepath):
         while line:
             if len(line) > 0 and line.find("created group") == -1 and line.find("changed the subject") == -1 and line.find("security code changed") == -1 and line.find("You created group") == -1 and line.find("Messages to this group are now secured with") == -1 and line.find("You changed this group's icon") == -1 and line != "\n" and line.find("Messages to this chat and calls") == -1 and (line[0:2].isnumeric() and line[2] == "/") and line.find("added") == -1 and line.find("removed") == -1 and line.find("left") == -1 and line.find("changed the group description") == -1:
                 # parse line to message
-                print(line)
+                #print(line)
                 msg = parseMsg(line)
-                print(msg.content)
+                #print(msg.content)
                 msgList.append(msg)
             line = fp.readline()
     fp.close()
