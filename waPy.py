@@ -163,25 +163,6 @@ def getFirstLastDateString(msgList):
     return str(msgList[0].time.date()) + " - " + str(msgList[len(msgList)-1].time.date())
 
 
-def plotWordsPerHour(userList, msgList, filename):
-    raw = getWordsPerHour(userList, msgList)
-    df = pd.DataFrame(raw).sort_index()
-    df.index.name = "Hour"
-    df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
-
-    plt.legend(loc="upper left")
-    plt.rc("grid", linestyle="--")
-    plt.grid(axis="y")
-    plt.ylabel("Words")
-
-    filename = "plots/" + filename + "/WordsPerHour.png"
-    print("Generating:\t ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated:\t ", filename)
-    print("***********************")
-
-
 # returns the sum of all words sorted by day of the week / user
 def getWordsPerDOW(userList, msgList):
     nm = collections.defaultdict(lambda: collections.defaultdict(int))
@@ -190,24 +171,6 @@ def getWordsPerDOW(userList, msgList):
 
     return nm
 
-
-def plotAverageMessageLength(userList, msgList, filename):
-    raw = getAvgMessageLength(userList, msgList)
-    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=[
-                      "Avg len"]).sort_values(by="Avg len")
-    df.index.name = "User"
-    df.plot(kind="bar", title="Average message length\nDuration: " +
-                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
-
-    plt.rc("grid", linestyle="--")
-    plt.grid(axis="y")
-    plt.ylabel("Words per message")
-
-    filename = "plots/" + filename + "/avgMessageLength.png"
-    print("Generating:\t ", filename)
-    plt.savefig(filename, dpi=1400)
-    print("Generated:\t ", filename)
-    print("***********************")
 
 
 def getWordsPerDayPerUser(userList, msgList):
@@ -307,6 +270,113 @@ def getMostPositiveDays(msgList, nDays):
     return avl
 
 
+# returns the times a user has double texted when x minutes have passed and x>lowerBound and x<upperBound
+def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
+    avl = collections.defaultdict(lambda: 0)
+    for i in range(len(msgList)):
+        if msgList[i].username == msgList[i-1].username:
+            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
+            if dif >= lowerBound and dif <= upperBound:
+                avl[msgList[i].username] += 1
+    return avl
+
+
+# returns the response time per minutes per user
+def getResponseTimePerMinutes(userList, msgList):
+    avl = collections.defaultdict(lambda: collections.defaultdict(int))
+
+    for i in range(len(msgList)):
+        if msgList[i].username != msgList[i-1].username:
+            # response
+            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
+            avl[msgList[i].username][5] += 1
+            if dif > 0 and dif <= 5:
+                avl[msgList[i].username][5] += 1
+            elif dif > 5 and dif <= 15:
+                avl[msgList[i].username][15] += 1
+            elif dif > 15 and dif <= 30:
+                avl[msgList[i].username][30] += 1
+            elif dif > 30 and dif <= 60:
+                avl[msgList[i].username][60] += 1
+            elif dif > 60 and dif <= 120:
+                avl[msgList[i].username][120] += 1
+            elif dif > 120 and dif <= 180:
+                avl[msgList[i].username][180] += 1
+            elif dif > 180 and dif <= 240:
+                avl[msgList[i].username][240] += 1
+            else:
+                avl[msgList[i].username][241] += 1
+
+    return avl
+
+# returns domain
+def parseUrl(url):
+    parsed_uri = urlparse(url)
+    result = '{uri.netloc}'.format(uri=parsed_uri)
+    return result
+
+# returns a dictionary with the number of links each user has sent
+def getUrlsPerUser(msgList):
+    d = collections.defaultdict(lambda: collections.defaultdict(int))
+    
+    for msg in msgList:
+        urls = re.findall(r'(https?://[^\s]+)', msg.content)
+        # if there are urls in the message
+        if len(urls) > 0:
+            for url in urls:
+                d[msg.username][parseUrl(url)] += 1
+    # sort the dictionaries
+    sort = collections.defaultdict()    
+    for k in d.keys():
+        sort[k] = dict(collections.OrderedDict(sorted(d[k].items(), key=operator.itemgetter(1), reverse=True)))
+
+    return dict(sort)
+
+
+#####################################################################
+######################## PLOTTING FUNCTIONS #########################
+#####################################################################
+
+
+
+def plotWordsPerHour(userList, msgList, filename):
+    raw = getWordsPerHour(userList, msgList)
+    df = pd.DataFrame(raw).sort_index()
+    df.index.name = "Hour"
+    df.plot(kind="bar", title="Total number of words per hour\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")")
+
+    plt.legend(loc="upper left")
+    plt.rc("grid", linestyle="--")
+    plt.grid(axis="y")
+    plt.ylabel("Words")
+
+    filename = "plots/" + filename + "/WordsPerHour.png"
+    print("Generating:\t ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated:\t ", filename)
+    print("***********************")
+
+
+def plotAverageMessageLength(userList, msgList, filename):
+    raw = getAvgMessageLength(userList, msgList)
+    df = pd.DataFrame(raw.values(), index=raw.keys(), columns=[
+                      "Avg len"]).sort_values(by="Avg len")
+    df.index.name = "User"
+    df.plot(kind="bar", title="Average message length\nDuration: " +
+                 str(getDaysLong(msgList)) + " days (" + getFirstLastDateString(msgList) + ")", legend=False)
+
+    plt.rc("grid", linestyle="--")
+    plt.grid(axis="y")
+    plt.ylabel("Words per message")
+
+    filename = "plots/" + filename + "/avgMessageLength.png"
+    print("Generating:\t ", filename)
+    plt.savefig(filename, dpi=1400)
+    print("Generated:\t ", filename)
+    print("***********************")
+
+
 # plots a the words per day of conversation, from start to finish
 def plotWordsPerDayPerUser(userList, msgList, filename):
     days = getDaysLong(msgList)
@@ -400,16 +470,6 @@ def plotMessagesPerUser(userList, msgList, filename):
     print("***********************")
 
 
-# returns the times a user has double texted when x minutes have passed and x>lowerBound and x<upperBound
-def getDoubleTextTimes(userList, msgList, lowerBound, upperBound):
-    avl = collections.defaultdict(lambda: 0)
-    for i in range(len(msgList)):
-        if msgList[i].username == msgList[i-1].username:
-            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
-            if dif >= lowerBound and dif <= upperBound:
-                avl[msgList[i].username] += 1
-    return avl
-
 
 # plots the times a user has double texted
 def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
@@ -435,61 +495,10 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
     print("***********************")
 
 
-# returns the response time per minutes per user
-def getResponseTimePerMinutes(userList, msgList):
-    avl = collections.defaultdict(lambda: collections.defaultdict(int))
-
-    for i in range(len(msgList)):
-        if msgList[i].username != msgList[i-1].username:
-            # response
-            dif = (msgList[i].time - msgList[i-1].time).total_seconds()/60
-            avl[msgList[i].username][5] += 1
-            if dif > 0 and dif <= 5:
-                avl[msgList[i].username][5] += 1
-            elif dif > 5 and dif <= 15:
-                avl[msgList[i].username][15] += 1
-            elif dif > 15 and dif <= 30:
-                avl[msgList[i].username][30] += 1
-            elif dif > 30 and dif <= 60:
-                avl[msgList[i].username][60] += 1
-            elif dif > 60 and dif <= 120:
-                avl[msgList[i].username][120] += 1
-            elif dif > 120 and dif <= 180:
-                avl[msgList[i].username][180] += 1
-            elif dif > 180 and dif <= 240:
-                avl[msgList[i].username][240] += 1
-            else:
-                avl[msgList[i].username][241] += 1
-
-    return avl
-
-# returns domain
-def parseUrl(url):
-    parsed_uri = urlparse(url)
-    result = '{uri.netloc}'.format(uri=parsed_uri)
-    return result
-
-# returns a dictionary with the number of links each user has sent
-def getUrlsPerUser(msgList):
-    d = collections.defaultdict(lambda: collections.defaultdict(int))
-    
-    for msg in msgList:
-        urls = re.findall(r'(https?://[^\s]+)', msg.content)
-        # if there are urls in the message
-        if len(urls) > 0:
-            for url in urls:
-                d[msg.username][parseUrl(url)] += 1
-    # sort the dictionaries
-    sort = collections.defaultdict()
-    for k in d.keys():
-        sort[k] = dict(collections.OrderedDict(sorted(d[k].items(), key=operator.itemgetter(1), reverse=True)))
-
-    return dict(sort)
-
-
-#####################################################################
-######################## PLOTTING FUNCTIONS #########################
-#####################################################################
+# plots the links each user has sent
+def plotUrlsPerUser(userList, msgList, filename):
+    raw = getUrlsPerUser(msgList)
+    df = pd.Data
 
 
 # plots the response time of every user
