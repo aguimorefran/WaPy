@@ -333,6 +333,64 @@ def getUrlsPerUser(msgList):
     return dict(sort)
 
 
+def getMessagesPerDayPerUser(userList, msgList):
+    avl = {}
+
+    # get a list of the datetimes of days from first to last message, including empty days with no messages
+    sdate = msgList[0].time.date()
+    edate = msgList[len(msgList)-1].time.date()
+    delta = edate-sdate
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for d in days:
+                h[d] = 0
+            avl[u] = h
+
+    for msg in msgList:
+        avl[msg.username][msg.time.date()] += 1
+
+    return avl
+
+
+def getPositivismPerDay(userList, msgList):
+    avl = {}
+    msgCount = getMessagesPerDayPerUser(userList, msgList)
+
+    # get a list of the datetimes of days from first to last message, including empty days with no messages
+    sdate = msgList[0].time.date()
+    edate = msgList[len(msgList)-1].time.date()
+    delta = edate-sdate
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+
+    for u in userList:
+        if u not in avl.keys():
+            h = {}
+            for d in days:
+                h[d] = 0
+            avl[u] = h
+
+    for msg in msgList:
+        avl[msg.username][msg.time.date()] += msg.pos
+
+    for u in avl.keys():
+        for d in avl[u].keys():
+            try:
+                avl[u][d] /= msgCount[u][d]
+            except ZeroDivisionError:
+                avl[u][d] = None
+
+    return avl
+
+
 #####################################################################
 ######################## PLOTTING FUNCTIONS #########################
 #####################################################################
@@ -574,63 +632,6 @@ def plotAvgPositivism(userList, msgList, filename):
     print("Generated:\t ", filename)
     print("***********************")
 
-
-def getMessagesPerDayPerUser(userList, msgList):
-    avl = {}
-
-    # get a list of the datetimes of days from first to last message, including empty days with no messages
-    sdate = msgList[0].time.date()
-    edate = msgList[len(msgList)-1].time.date()
-    delta = edate-sdate
-    days = []
-    for i in range(delta.days + 1):
-        day = sdate + timedelta(days=i)
-        days.append(day)
-
-    for u in userList:
-        if u not in avl.keys():
-            h = {}
-            for d in days:
-                h[d] = 0
-            avl[u] = h
-
-    for msg in msgList:
-        avl[msg.username][msg.time.date()] += 1
-
-    return avl
-
-
-def getPositivismPerDay(userList, msgList):
-    avl = {}
-    msgCount = getMessagesPerDayPerUser(userList, msgList)
-
-    # get a list of the datetimes of days from first to last message, including empty days with no messages
-    sdate = msgList[0].time.date()
-    edate = msgList[len(msgList)-1].time.date()
-    delta = edate-sdate
-    days = []
-    for i in range(delta.days + 1):
-        day = sdate + timedelta(days=i)
-        days.append(day)
-
-    for u in userList:
-        if u not in avl.keys():
-            h = {}
-            for d in days:
-                h[d] = 0
-            avl[u] = h
-
-    for msg in msgList:
-        avl[msg.username][msg.time.date()] += msg.pos
-
-    for u in avl.keys():
-        for d in avl[u].keys():
-            try:
-                avl[u][d] /= msgCount[u][d]
-            except ZeroDivisionError:
-                avl[u][d] = None
-
-    return avl
 
 
 # plots the positivism per day of conversation and the moving mean
