@@ -328,9 +328,9 @@ def getUrlsPerUser(msgList):
     # sort the dictionaries
     sort = collections.defaultdict()    
     for k in d.keys():
-        sort[k] = dict(collections.OrderedDict(sorted(d[k].items(), key=operator.itemgetter(1), reverse=True)))
+        sort[k] = collections.OrderedDict(sorted(d[k].items(), key=operator.itemgetter(1), reverse=True))
 
-    return dict(sort)
+    return sort
 
 
 def getMessagesPerDayPerUser(userList, msgList):
@@ -394,8 +394,6 @@ def getPositivismPerDay(userList, msgList):
 #####################################################################
 ######################## PLOTTING FUNCTIONS #########################
 #####################################################################
-
-
 
 def plotWordsPerHour(userList, msgList, filename):
     raw = getWordsPerHour(userList, msgList)
@@ -556,7 +554,9 @@ def plotDoubleTextTimes(userList, msgList, lowerBound, upperBound, filename):
 # plots the links each user has sent
 def plotUrlsPerUser(userList, msgList, filename):
     raw = getUrlsPerUser(msgList)
-    df = pd.Data
+    fig, axs = plt.subplots(len(raw))
+    #FIXME
+    
 
 
 # plots the response time of every user
@@ -750,7 +750,7 @@ def main(convName, plotting, posPlotting):
         plotResponseTimePerMinutes(userList, msgList, conversationFile)
         plotDoubleTextTimes(userList, msgList, 15, 1440, conversationFile)
 
-    print(getUrlsPerUser(msgList))
+    plotUrlsPerUser(userList, msgList, conversationFile)
 
     # --------------------- positivism plotting part ----------------------
     if posPlotting:
