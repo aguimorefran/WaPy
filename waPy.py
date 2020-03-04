@@ -10,7 +10,7 @@ import operator
 import collections
 import numpy as np
 import pandas as pd
-from classifier import SentimentClassifier
+#from classifier import SentimentClassifier
 import unidecode
 import seaborn as sns
 import sys
@@ -472,19 +472,19 @@ def parseUrl(url):
 # returns a dictionary with the number of links each user has sent
 def getUrlsPerUser(msgList):
     d = collections.defaultdict(lambda: collections.defaultdict(int))
+    
     for msg in msgList:
         urls = re.findall(r'(https?://[^\s]+)', msg.content)
+        # if there are urls in the message
         if len(urls) > 0:
-            domains = []
             for url in urls:
-                domains = parseUrl(url)
-            for d in domains:
-                if d in d[msg.username].keys():
-                    #FIXME
-    
-    return d
+                d[msg.username][parseUrl(url)] += 1
+    # sort the dictionaries
+    sort = collections.defaultdict()
+    for k in d.keys():
+        sort[k] = dict(collections.OrderedDict(sorted(d[k].items(), key=operator.itemgetter(1), reverse=True)))
 
-        
+    return dict(sort)
 
 
 #####################################################################
